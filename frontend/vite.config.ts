@@ -10,8 +10,9 @@ export default defineConfig({
     }
   },
   server: {
+    host: '0.0.0.0',
     port: 5173,
-    allowedHosts: ['2b3476e664fb.monkeycode-ai.online],
+    allowedHosts: ['2b3476e664fb.monkeycode-ai.online'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
