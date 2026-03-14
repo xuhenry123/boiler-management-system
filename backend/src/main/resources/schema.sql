@@ -421,9 +421,9 @@ INSERT INTO outdoor_temperature (predict_time, temperature, data_source, is_actu
 
 -- 插入锅炉测试数据
 INSERT INTO boiler (boiler_code, boiler_name, boiler_type, manufacturer, model, rated_capacity, rated_pressure, design_efficiency, status) VALUES
-('BLR001', '1号燃气锅炉', 'gas', '某锅炉厂', WNS10-1.0, 10.00, 1.00, 0.95, 1),
-('BLR002', '2号燃气锅炉', 'gas', '某锅炉厂', WNS10-1.0, 10.00, 1.00, 0.95, 1),
-('BLR003', '3号燃气锅炉', 'gas', '某锅炉厂', WNS15-1.0, 15.00, 1.00, 0.94, 0);
+('BLR001', '1号燃气锅炉', 'gas', '某锅炉厂', 'WNS10-1.0', 10.00, 1.00, 0.95, 1),
+('BLR002', '2号燃气锅炉', 'gas', '某锅炉厂', 'WNS10-1.0', 10.00, 1.00, 0.95, 1),
+('BLR003', '3号燃气锅炉', 'gas', '某锅炉厂', 'WNS15-1.0', 15.00, 1.00, 0.94, 0);
 
 -- 插入阀门设备测试数据
 INSERT INTO valve_device (valve_code, valve_name, valve_type, node_id, manufacturer, model, diameter, open_ratio, control_protocol, status) VALUES
