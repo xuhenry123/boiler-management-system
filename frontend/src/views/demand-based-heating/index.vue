@@ -19,6 +19,61 @@
       </template>
       
       <el-row :gutter="20">
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-item">
+              <div class="stat-icon" style="background: #409eff">
+                <el-icon><User /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.totalUsers }}</div>
+                <div class="stat-label">用户总数</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-item">
+              <div class="stat-icon" style="background: #67c23a">
+                <el-icon><CircleCheck /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.normalUsers }}</div>
+                <div class="stat-label">温度正常</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-item">
+              <div class="stat-icon" style="background: #f56c6c">
+                <el-icon><Warning /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.abnormalUsers }}</div>
+                <div class="stat-label">温度异常</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-item">
+              <div class="stat-icon" style="background: #e6a23c">
+                <el-icon><Coin /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.energySaving }}%</div>
+                <div class="stat-label">节能率</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20" style="margin-top: 20px">
         <el-col :span="8">
           <el-card shadow="hover">
             <template #header>
@@ -41,7 +96,7 @@
               <el-table-column prop="buildingName" label="建筑物" />
               <el-table-column prop="temperature" label="当前温度(℃)" width="120">
                 <template #default="{ row }">
-                  <span :style="{ color: getTempColor(row.temperature, row.targetTemp) }">
+                  <span :style="{ color: getTempColor(row.temperature, row.targetTemp), fontWeight: 'bold' }">
                     {{ row.temperature }}
                   </span>
                 </template>
@@ -163,7 +218,7 @@
 import { ref, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, User, CircleCheck, Warning, Coin } from '@element-plus/icons-vue'
 
 const tempDistChartRef = ref(null)
 const predictChartRef = ref(null)
@@ -179,6 +234,13 @@ const controlMode = ref('auto')
 const tempDeviation = ref(1.5)
 const preheatTime = ref(30)
 const energySavingMode = ref(true)
+
+const stats = ref({
+  totalUsers: 156,
+  normalUsers: 142,
+  abnormalUsers: 14,
+  energySaving: 12.5
+})
 
 const tempDeviationMarks = {
   0.5: '0.5℃',
@@ -231,7 +293,11 @@ const initTempDistChart = () => {
         { value: normal, name: '正常(±1℃)', itemStyle: { color: '#67c23a' } },
         { value: low, name: '偏低(>1℃)', itemStyle: { color: '#409eff' } },
         { value: high, name: '偏高(>1℃)', itemStyle: { color: '#f56c6c' } }
-      ]
+      ],
+      label: {
+        show: true,
+        formatter: '{b}: {c}人 ({d}%)'
+      }
     }]
   }
   chart.setOption(option)
@@ -342,5 +408,42 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.stat-card {
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-top: 5px;
 }
 </style>
