@@ -2,9 +2,9 @@
   <div class="dashboard">
     <el-row :gutter="20">
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <div class="stat-icon" style="background: #409eff">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
               <el-icon :size="32"><OfficeBuilding /></el-icon>
             </div>
             <div class="stat-info">
@@ -15,9 +15,9 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <div class="stat-icon" style="background: #67c23a">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">
               <el-icon :size="32"><House /></el-icon>
             </div>
             <div class="stat-info">
@@ -28,9 +28,9 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <div class="stat-icon" style="background: #e6a23c">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
               <el-icon :size="32"><User /></el-icon>
             </div>
             <div class="stat-info">
@@ -41,9 +41,9 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <div class="stat-icon" style="background: #f56c6c">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
               <el-icon :size="32"><Warning /></el-icon>
             </div>
             <div class="stat-info">
@@ -57,17 +57,21 @@
     
     <el-row :gutter="20" style="margin-top: 20px">
       <el-col :span="16">
-        <el-card class="chart-card">
+        <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
               <span>温度趋势监控</span>
+              <el-button type="primary" size="small" @click="refreshData">
+                <el-icon><Refresh /></el-icon>
+                刷新数据
+              </el-button>
             </div>
           </template>
           <div ref="tempChartRef" style="height: 350px"></div>
         </el-card>
       </el-col>
       <el-col :span="8">
-        <el-card class="chart-card">
+        <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
               <span>换热站运行状态</span>
@@ -80,7 +84,7 @@
     
     <el-row :gutter="20" style="margin-top: 20px">
       <el-col :span="12">
-        <el-card class="chart-card">
+        <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
               <span>热负荷曲线</span>
@@ -90,13 +94,14 @@
         </el-card>
       </el-col>
       <el-col :span="12">
-        <el-card class="chart-card">
+        <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
               <span>最近告警</span>
+              <el-button type="text" @click="$router.push('/alarms')">查看全部</el-button>
             </div>
           </template>
-          <el-table :data="alarms" style="width: 100%">
+          <el-table :data="alarms" style="width: 100%" max-height="280">
             <el-table-column prop="alarmType" label="告警类型" width="100" />
             <el-table-column prop="alarmMessage" label="告警信息" />
             <el-table-column prop="alarmLevel" label="级别" width="80">
@@ -113,74 +118,126 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import { OfficeBuilding, House, User, Warning } from '@element-plus/icons-vue'
+import { OfficeBuilding, House, User, Warning, Refresh } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const tempChartRef = ref(null)
 const stationChartRef = ref(null)
 const loadChartRef = ref(null)
+let tempChart = null
+let stationChart = null
+let loadChart = null
 
 const stats = reactive({
-  stationCount: 3,
-  buildingCount: 4,
-  userCount: 8,
-  alarmCount: 2
+  stationCount: 0,
+  buildingCount: 0,
+  userCount: 0,
+  alarmCount: 0
 })
 
-const alarms = ref([
-  { alarmType: '温度异常', alarmMessage: '1号楼101室温度过低', alarmLevel: 'Warning', createTime: '2026-03-14 10:30:00' },
-  { alarmType: '设备故障', alarmMessage: '2号阀门通讯中断', alarmLevel: 'Critical', createTime: '2026-03-14 10:25:00' }
-])
+const alarms = ref([])
 
 const getAlarmLevelType = (level) => {
   const map = { Info: 'info', Warning: 'warning', Critical: 'danger' }
   return map[level] || 'info'
 }
 
-const initTempChart = () => {
-  const chart = echarts.init(tempChartRef.value)
-  const option = {
+const loadData = () => {
+  // 从模拟API获取数据
+  if (window.MockAPI) {
+    const dashboardStats = window.MockAPI.getDashboardStats()
+    stats.stationCount = dashboardStats.stationCount
+    stats.buildingCount = dashboardStats.buildingCount
+    stats.userCount = dashboardStats.userCount
+    stats.alarmCount = dashboardStats.alarmCount
+    
+    alarms.value = window.MockAPI.getAlarms().slice(0, 8)
+  }
+}
+
+const initCharts = () => {
+  if (!tempChartRef.value || !stationChartRef.value || !loadChartRef.value) return
+  
+  if (tempChart) tempChart.dispose()
+  if (stationChart) stationChart.dispose()
+  if (loadChart) loadChart.dispose()
+  
+  // 温度趋势图
+  tempChart = echarts.init(tempChartRef.value)
+  let tempData = { primarySupply: [], primaryReturn: [], secondarySupply: [], secondaryReturn: [] }
+  let hours = []
+  
+  if (window.MockAPI) {
+    tempData = window.MockAPI.getTemperatureTrend()
+    hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+  } else {
+    hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+    tempData = {
+      primarySupply: [118, 120, 122, 121, 119, 120],
+      primaryReturn: [68, 70, 72, 71, 69, 70],
+      secondarySupply: [48, 50, 51, 50, 49, 50],
+      secondaryReturn: [38, 40, 41, 40, 39, 40]
+    }
+  }
+  
+  const tempOption = {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['一次侧供水', '一次侧回水', '二次侧供水', '二次侧回水'] },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    legend: { data: ['一次侧供水', '一次侧回水', '二次侧供水', '二次侧回水'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+      data: hours
     },
     yAxis: { type: 'value', name: '温度(℃)' },
     series: [
-      { name: '一次侧供水', type: 'line', smooth: true, data: [118, 120, 122, 121, 119, 120] },
-      { name: '一次侧回水', type: 'line', smooth: true, data: [68, 70, 72, 71, 69, 70] },
-      { name: '二次侧供水', type: 'line', smooth: true, data: [48, 50, 51, 50, 49, 50] },
-      { name: '二次侧回水', type: 'line', smooth: true, data: [38, 40, 41, 40, 39, 40] }
+      { name: '一次侧供水', type: 'line', smooth: true, data: tempData.primarySupply, itemStyle: { color: '#f56c6c' } },
+      { name: '一次侧回水', type: 'line', smooth: true, data: tempData.primaryReturn, itemStyle: { color: '#e6a23c' } },
+      { name: '二次侧供水', type: 'line', smooth: true, data: tempData.secondarySupply, itemStyle: { color: '#409eff' } },
+      { name: '二次侧回水', type: 'line', smooth: true, data: tempData.secondaryReturn, itemStyle: { color: '#67c23a' } }
     ]
   }
-  chart.setOption(option)
-}
-
-const initStationChart = () => {
-  const chart = echarts.init(stationChartRef.value)
-  const option = {
-    tooltip: { trigger: 'item' },
+  tempChart.setOption(tempOption)
+  
+  // 换热站状态饼图
+  stationChart = echarts.init(stationChartRef.value)
+  let stationData = []
+  if (window.MockAPI) {
+    stationData = window.MockAPI.getStationStatus()
+  } else {
+    stationData = [
+      { value: 20, name: '运行中', itemStyle: { color: '#67c23a' } },
+      { value: 3, name: '停止', itemStyle: { color: '#909399' } },
+      { value: 1, name: '故障', itemStyle: { color: '#f56c6c' } }
+    ]
+  }
+  
+  const stationOption = {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0 },
     series: [{
       type: 'pie',
       radius: ['40%', '70%'],
-      data: [
-        { value: 3, name: '运行中', itemStyle: { color: '#67c23a' } },
-        { value: 0, name: '停止', itemStyle: { color: '#909399' } },
-        { value: 0, name: '故障', itemStyle: { color: '#f56c6c' } }
-      ]
+      center: ['50%', '45%'],
+      data: stationData
     }]
   }
-  chart.setOption(option)
-}
-
-const initLoadChart = () => {
-  const chart = echarts.init(loadChartRef.value)
-  const option = {
+  stationChart.setOption(stationOption)
+  
+  // 热负荷柱状图
+  loadChart = echarts.init(loadChartRef.value)
+  let loadData = []
+  if (window.MockAPI) {
+    loadData = window.MockAPI.getHeatLoad()
+  } else {
+    loadData = [45, 42, 55, 60, 58, 52]
+  }
+  
+  const loadOption = {
     tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
       data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
@@ -188,17 +245,37 @@ const initLoadChart = () => {
     yAxis: { type: 'value', name: '负荷(MW)' },
     series: [{
       type: 'bar',
-      data: [45, 42, 55, 60, 58, 52],
-      itemStyle: { color: '#409eff' }
+      data: loadData,
+      itemStyle: { 
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: '#667eea' },
+          { offset: 1, color: '#764ba2' }
+        ])
+      },
+      label: { show: true, position: 'top' }
     }]
   }
-  chart.setOption(option)
+  loadChart.setOption(loadOption)
 }
 
+const refreshData = () => {
+  loadData()
+  initCharts()
+  ElMessage.success('数据已刷新')
+}
+
+// 窗口大小变化时重新调整图表
+window.addEventListener('resize', () => {
+  tempChart && tempChart.resize()
+  stationChart && stationChart.resize()
+  loadChart && loadChart.resize()
+})
+
 onMounted(() => {
-  initTempChart()
-  initStationChart()
-  initLoadChart()
+  nextTick(() => {
+    loadData()
+    initCharts()
+  })
 })
 </script>
 
@@ -208,7 +285,13 @@ onMounted(() => {
 }
 
 .stat-card {
-  border-radius: 8px;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .stat-content {
@@ -218,13 +301,14 @@ onMounted(() => {
 }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
+  font-size: 28px;
 }
 
 .stat-info {
@@ -232,7 +316,7 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
   color: #303133;
 }
@@ -244,7 +328,7 @@ onMounted(() => {
 }
 
 .chart-card {
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .card-header {
