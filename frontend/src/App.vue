@@ -27,6 +27,32 @@
           <el-menu-item index="/secondary-network">二网平衡</el-menu-item>
           <el-menu-item index="/heat-station">换热站自控</el-menu-item>
           <el-menu-item index="/primary-network">一网控制策略</el-menu-item>
+          <el-menu-item index="/climate-compensation">气候补偿模式</el-menu-item>
+          <el-menu-item index="/secondary-temp-control">二级网控温</el-menu-item>
+          <el-menu-item index="/balance-strategy">管网平衡策略</el-menu-item>
+          <el-menu-item index="/time-zone-control">分时分区控制</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="analysis">
+          <template #title>
+            <el-icon><DataAnalysis /></el-icon>
+            <span>数据分析</span>
+          </template>
+          <el-menu-item index="/meteorology">气象分析</el-menu-item>
+          <el-menu-item index="/load-forecast">负荷预测</el-menu-item>
+          <el-menu-item index="/network-analysis">管网平衡分析</el-menu-item>
+          <el-menu-item index="/trend-analysis">趋势分析</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="optimization">
+          <template #title>
+            <el-icon><TrendCharts /></el-icon>
+            <span>优化调度</span>
+          </template>
+          <el-menu-item index="/equipment">供能设备管理</el-menu-item>
+          <el-menu-item index="/risk-assessment">风险评估</el-menu-item>
+          <el-menu-item index="/anomaly-prediction">异常状态预测</el-menu-item>
+          <el-menu-item index="/multi-energy-optimization">多能耦合寻优</el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="source-control">
@@ -83,7 +109,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Bell, Sunny, Monitor, Coin, OfficeBuilding, Setting, User } from '@element-plus/icons-vue'
+import { Bell, Sunny, Monitor, Coin, OfficeBuilding, Setting, User, DataAnalysis, TrendCharts } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)

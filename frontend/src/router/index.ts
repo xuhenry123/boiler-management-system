@@ -76,6 +76,78 @@ const routes = [
     name: 'Alarms',
     component: () => import('@/views/Alarms.vue'),
     meta: { title: '告警管理' }
+  },
+  {
+    path: '/meteorology',
+    name: 'Meteorology',
+    component: () => import('@/views/meteorology/index.vue'),
+    meta: { title: '气象分析' }
+  },
+  {
+    path: '/load-forecast',
+    name: 'LoadForecast',
+    component: () => import('@/views/load-forecast/index.vue'),
+    meta: { title: '负荷预测' }
+  },
+  {
+    path: '/network-analysis',
+    name: 'NetworkAnalysis',
+    component: () => import('@/views/network-analysis/index.vue'),
+    meta: { title: '管网平衡分析' }
+  },
+  {
+    path: '/trend-analysis',
+    name: 'TrendAnalysis',
+    component: () => import('@/views/trend-analysis/index.vue'),
+    meta: { title: '趋势分析' }
+  },
+  {
+    path: '/equipment',
+    name: 'Equipment',
+    component: () => import('@/views/equipment/index.vue'),
+    meta: { title: '供能设备管理' }
+  },
+  {
+    path: '/climate-compensation',
+    name: 'ClimateCompensation',
+    component: () => import('@/views/climate-compensation/index.vue'),
+    meta: { title: '气候补偿模式' }
+  },
+  {
+    path: '/secondary-temp-control',
+    name: 'SecondaryTempControl',
+    component: () => import('@/views/secondary-temp-control/index.vue'),
+    meta: { title: '二级网控温' }
+  },
+  {
+    path: '/balance-strategy',
+    name: 'BalanceStrategy',
+    component: () => import('@/views/balance-strategy/index.vue'),
+    meta: { title: '管网平衡策略' }
+  },
+  {
+    path: '/time-zone-control',
+    name: 'TimeZoneControl',
+    component: () => import('@/views/time-zone-control/index.vue'),
+    meta: { title: '分时分区控制' }
+  },
+  {
+    path: '/risk-assessment',
+    name: 'RiskAssessment',
+    component: () => import('@/views/risk-assessment/index.vue'),
+    meta: { title: '风险评估' }
+  },
+  {
+    path: '/anomaly-prediction',
+    name: 'AnomalyPrediction',
+    component: () => import('@/views/anomaly-prediction/index.vue'),
+    meta: { title: '异常状态预测' }
+  },
+  {
+    path: '/multi-energy-optimization',
+    name: 'MultiEnergyOptimization',
+    component: () => import('@/views/multi-energy-optimization/index.vue'),
+    meta: { title: '多能耦合寻优' }
   }
 ]
 
