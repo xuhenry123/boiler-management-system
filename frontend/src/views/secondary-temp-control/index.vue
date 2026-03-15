@@ -20,8 +20,8 @@
         <el-col :span="6">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-item">
-              <div class="stat-icon" style="background: #409eff">
-                <el-icon>< Sunny /></el-icon>
+              <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+                <el-icon><Sunny /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ supplyTemp }}°C</div>
@@ -33,7 +33,7 @@
         <el-col :span="6">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-item">
-              <div class="stat-icon" style="background: #67c23a">
+              <div class="stat-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">
                 <el-icon><Sunny /></el-icon>
               </div>
               <div class="stat-info">
@@ -46,7 +46,7 @@
         <el-col :span="6">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-item">
-              <div class="stat-icon" style="background: #e6a23c">
+              <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
                 <el-icon><Odometer /></el-icon>
               </div>
               <div class="stat-info">
@@ -59,7 +59,7 @@
         <el-col :span="6">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-item">
-              <div class="stat-icon" style="background: #f56c6c">
+              <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
                 <el-icon><Operation /></el-icon>
               </div>
               <div class="stat-info">
@@ -97,17 +97,16 @@
             </template>
             <el-form label-width="80px">
               <el-form-item label="Kp">
-                <el-input-number v-model="pidParams.kp" :step="0.1" :precision="2" />
+                <el-input-number v-model="pidParams.kp" :step="0.1" :precision="2" style="width: 100%" />
               </el-form-item>
               <el-form-item label="Ki">
-                <el-input-number v-model="pidParams.ki" :step="0.01" :precision="3" />
+                <el-input-number v-model="pidParams.ki" :step="0.01" :precision="3" style="width: 100%" />
               </el-form-item>
               <el-form-item label="Kd">
-                <el-input-number v-model="pidParams.kd" :step="0.01" :precision="3" />
+                <el-input-number v-model="pidParams.kd" :step="0.01" :precision="3" style="width: 100%" />
               </el-form-item>
               <el-form-item label="设定值">
-                <el-input-number v-model="pidParams.setpoint" :min="30" :max="60" />
-                <span style="margin-left: 10px">°C</span>
+                <el-input-number v-model="pidParams.setpoint" :min="30" :max="60" style="width: 100%" />
               </el-form-item>
               <el-form-item label="控制模式">
                 <el-radio-group v-model="controlMode">
@@ -116,12 +115,11 @@
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="输出限制">
-                <el-slider v-model="outputLimit" range :min="0" :max="100" />
+                <el-slider v-model="outputLimit" range :min="0" :max="100" :marks="{0: '0%', 50: '50%', 100: '100%'}" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" @click="saveParams">保存参数</el-button>
+                <el-button type="primary" @click="saveParams" style="width: 100px">保存参数</el-button>
                 <el-button @click="autoTuning">自整定</el-button>
-                <el-button @click="resetParams">重置</el-button>
               </el-form-item>
             </el-form>
           </el-card>
@@ -210,16 +208,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { Refresh, Sunny, Odometer, Operation } from '@element-plus/icons-vue'
 
 const tempControlChartRef = ref(null)
 const zoneTempChartRef = ref(null)
+let tempChartInstance = null
+let zoneChartInstance = null
 
 const selectedStation = ref('换热站1')
-const stations = ref(['换热站1', '换热站2', '换热站3'])
+const stations = ref(['换热站1', '换热站2', '换热站3', '换热站4', '换热站5'])
 const timeRange = ref('day')
 const buildingFilter = ref('')
 const historyDateRange = ref([])
@@ -254,7 +254,9 @@ const historyData = ref([
   { time: '2026-03-15 09:50:00', station: '换热站1', setpoint: 50, actualTemp: 49.8, deviation: -0.2, valvePosition: 63, controlMode: 'auto', status: '正常' },
   { time: '2026-03-15 09:40:00', station: '换热站1', setpoint: 50, actualTemp: 50.5, deviation: 0.5, valvePosition: 68, controlMode: 'auto', status: '正常' },
   { time: '2026-03-15 09:30:00', station: '换热站2', setpoint: 48, actualTemp: 48.2, deviation: 0.2, valvePosition: 55, controlMode: 'auto', status: '正常' },
-  { time: '2026-03-15 09:20:00', station: '换热站1', setpoint: 50, actualTemp: 51.5, deviation: 1.5, valvePosition: 72, controlMode: 'auto', status: '报警' }
+  { time: '2026-03-15 09:20:00', station: '换热站1', setpoint: 50, actualTemp: 51.5, deviation: 1.5, valvePosition: 72, controlMode: 'auto', status: '报警' },
+  { time: '2026-03-15 09:10:00', station: '换热站3', setpoint: 52, actualTemp: 51.8, deviation: -0.2, valvePosition: 58, controlMode: 'auto', status: '正常' },
+  { time: '2026-03-15 09:00:00', station: '换热站2', setpoint: 48, actualTemp: 47.5, deviation: -0.5, valvePosition: 52, controlMode: 'auto', status: '正常' }
 ])
 
 const onStationChange = () => {
@@ -298,7 +300,14 @@ const loadHistory = () => {
 }
 
 const initTempControlChart = () => {
-  const chart = echarts.init(tempControlChartRef.value)
+  if (!tempControlChartRef.value) return
+  
+  if (tempChartInstance) {
+    tempChartInstance.dispose()
+  }
+  
+  tempChartInstance = echarts.init(tempControlChartRef.value)
+  
   let xAxisData = []
   let setpointData = []
   let actualData = []
@@ -314,41 +323,130 @@ const initTempControlChart = () => {
   }
   
   const option = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['设定值', '实际值', '偏差范围'] },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: xAxisData },
-    yAxis: { type: 'value', name: '温度(°C)' },
+    tooltip: { 
+      trigger: 'axis',
+      formatter: function(params) {
+        let result = params[0].axisValueLabel + '<br/>'
+        params.forEach(param => {
+          if (param.value !== null) {
+            result += param.marker + ' ' + param.seriesName + ': ' + param.value + '<br/>'
+          }
+        })
+        return result
+      }
+    },
+    legend: { data: ['设定值', '实际值', '上限', '下限'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+    xAxis: { 
+      type: 'category', 
+      data: xAxisData,
+      boundaryGap: false
+    },
+    yAxis: { 
+      type: 'value', 
+      name: '温度(°C)',
+      min: 45,
+      max: 55
+    },
     series: [
-      { name: '设定值', type: 'line', data: setpointData, lineStyle: { type: 'dashed', color: '#909399' }, itemStyle: { color: '#909399' } },
-      { name: '实际值', type: 'line', smooth: true, data: actualData, itemStyle: { color: '#409eff' } },
-      { name: '偏差范围', type: 'line', data: setpointData.map(v => v + 1), lineStyle: { opacity: 0.3, type: 'dotted' }, showSymbol: false, areaStyle: { opacity: 0.1 } },
-      { name: '偏差范围', type: 'line', data: setpointData.map(v => v - 1), lineStyle: { opacity: 0.3, type: 'dotted' }, showSymbol: false, areaStyle: { opacity: 0.1 } }
+      { 
+        name: '设定值', 
+        type: 'line', 
+        data: setpointData, 
+        lineStyle: { type: 'dashed', color: '#909399' }, 
+        itemStyle: { color: '#909399' },
+        symbol: 'none'
+      },
+      { 
+        name: '实际值', 
+        type: 'line', 
+        smooth: true, 
+        data: actualData, 
+        itemStyle: { color: '#409eff' },
+        symbol: 'circle',
+        symbolSize: 6
+      },
+      { 
+        name: '上限', 
+        type: 'line', 
+        data: setpointData.map(v => v + 1), 
+        lineStyle: { opacity: 0.3, type: 'dotted', color: '#67c23a' }, 
+        showSymbol: false,
+        areaStyle: { opacity: 0.1, color: '#67c23a' }
+      },
+      { 
+        name: '下限', 
+        type: 'line', 
+        data: setpointData.map(v => v - 1), 
+        lineStyle: { opacity: 0.3, type: 'dotted', color: '#67c23a' }, 
+        showSymbol: false,
+        areaStyle: { opacity: 0.1, color: '#67c23a', yAxisIndex: 0 }
+      }
     ]
   }
-  chart.setOption(option)
+  tempChartInstance.setOption(option)
 }
 
 const initZoneTempChart = () => {
-  const chart = echarts.init(zoneTempChartRef.value)
+  if (!zoneTempChartRef.value) return
+  
+  if (zoneChartInstance) {
+    zoneChartInstance.dispose()
+  }
+  
+  zoneChartInstance = echarts.init(zoneTempChartRef.value)
+  
   const option = {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['供水', '回水', '室内'] },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: ['1号楼', '2号楼', '3号楼', '4号楼', '5号楼'] },
-    yAxis: { type: 'value', name: '温度(°C)' },
+    legend: { data: ['供水温度', '回水温度', '室内温度'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+    xAxis: { 
+      type: 'category', 
+      data: ['1号楼', '2号楼', '3号楼', '4号楼', '5号楼', '6号楼'] 
+    },
+    yAxis: { 
+      type: 'value', 
+      name: '温度(°C)' 
+    },
     series: [
-      { name: '供水', type: 'bar', data: [50, 51, 49, 50, 52], itemStyle: { color: '#409eff' } },
-      { name: '回水', type: 'bar', data: [40, 41, 39, 40, 42], itemStyle: { color: '#67c23a' } },
-      { name: '室内', type: 'line', data: [20, 21, 19, 20, 22], itemStyle: { color: '#e6a23c' }, yAxisIndex: 1 }
+      { 
+        name: '供水温度', 
+        type: 'bar', 
+        data: [50, 51, 49, 50, 52, 48], 
+        itemStyle: { color: '#409eff' },
+        label: { show: true, position: 'top' }
+      },
+      { 
+        name: '回水温度', 
+        type: 'bar', 
+        data: [40, 41, 39, 40, 42, 38], 
+        itemStyle: { color: '#67c23a' },
+        label: { show: true, position: 'top' }
+      },
+      { 
+        name: '室内温度', 
+        type: 'line', 
+        data: [20, 21, 19, 20, 22, 18], 
+        itemStyle: { color: '#e6a23c' },
+        symbol: 'circle',
+        symbolSize: 8,
+        label: { show: true, position: 'top' }
+      }
     ]
   }
-  chart.setOption(option)
+  zoneChartInstance.setOption(option)
 }
 
 onMounted(() => {
-  initTempControlChart()
-  initZoneTempChart()
+  nextTick(() => {
+    initTempControlChart()
+    initZoneTempChart()
+  })
+  
+  window.addEventListener('resize', () => {
+    tempChartInstance && tempChartInstance.resize()
+    zoneChartInstance && zoneChartInstance.resize()
+  })
 })
 </script>
 
@@ -365,6 +463,12 @@ onMounted(() => {
 
 .stat-card {
   border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-item {
@@ -374,14 +478,14 @@ onMounted(() => {
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .stat-info {
@@ -389,7 +493,7 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
 }
