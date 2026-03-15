@@ -8,7 +8,7 @@
             <el-select v-model="heatingStrategy" placeholder="供热策略" style="width: 140px; margin-right: 10px">
               <el-option label="按需供热" value="demand" />
               <el-option label="定时供热" value="scheduled" />
-              <el-option label"恒温供热" value="constant" />
+              <el-option label="恒温供热" value="constant" />
             </el-select>
             <el-button type="primary" @click="handleRefresh">
               <el-icon><Refresh /></el-icon>

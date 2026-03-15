@@ -5,7 +5,7 @@
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon" style="background: #409eff">
-              <el-icon :size="32"><WarnTriangle /></el-icon>
+              <el-icon :size="32"><WarningFilled /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ predictionStats.pendingCount }}</div>
@@ -206,7 +206,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { WarnTriangle, Warning, CircleCheck, Timer } from '@element-plus/icons-vue'
+import { WarningFilled, Warning, CircleCheck, Timer } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 

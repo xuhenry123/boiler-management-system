@@ -31,7 +31,7 @@
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon" style="background: #e6a23c">
-              <el-icon :size="32"><Leaf /></el-icon>
+              <el-icon :size="32"><CircleCheck /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ energyStats.emissions }}t</div>
@@ -237,7 +237,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Coin, TrendCharts, Leaf, Cpu } from '@element-plus/icons-vue'
+import { Coin, TrendCharts, CircleCheck, Cpu } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 

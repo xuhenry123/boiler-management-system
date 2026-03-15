@@ -18,7 +18,7 @@
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon" style="background: #67c23a">
-              <el-icon :size="32"><Temperature /></el-icon>
+              <el-icon :size="32"><Sunny /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ outdoorTemp }}°C</div>
@@ -266,7 +266,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Sunny, Temperature, TrendCharts, DataLine, Edit } from '@element-plus/icons-vue'
+import { Sunny, TrendCharts, DataLine, Edit } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 
