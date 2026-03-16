@@ -80,20 +80,20 @@
             </div>
           </template>
           <el-table :data="predictionList" style="width: 100%">
-            <el-table-column prop="predictTime" label="预测时间" width="180" />
-            <el-table-column prop="type" label="预测类型" width="100">
+            <el-table-column prop="detectedAt" label="检测时间" width="180" />
+            <el-table-column prop="metricType" label="异常类型" width="100">
               <template #default="{ row }">
-                <el-tag>{{ row.type }}</el-tag>
+                <el-tag>{{ getTypeLabel(row.metricType) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="location" label="预测位置" />
-            <el-table-column prop="anomalyProb" label="异常概率(%)" width="150">
+            <el-table-column prop="deviceName" label="设备位置" />
+            <el-table-column prop="anomalyScore" label="异常概率(%)" width="150">
               <template #default="{ row }">
-                <el-progress :percentage="row.anomalyProb" :stroke-width="10" :color="getProgressColor(row.anomalyProb)" />
+                <el-progress :percentage="row.anomalyScore ? Math.round(row.anomalyScore * 100) : 0" :stroke-width="10" :color="getProgressColor(row.anomalyScore ? row.anomalyScore * 100 : 0)" />
               </template>
             </el-table-column>
-            <el-table-column prop="occurTime" label="预计发生时间" width="180" />
-            <el-table-column prop="leadTime" label="提前时间" width="100" />
+            <el-table-column prop="metricValue" label="当前值" width="100" />
+            <el-table-column prop="threshold" label="阈值" width="100" />
             <el-table-column prop="severity" label="严重程度" width="80">
               <template #default="{ row }">
                 <el-tag :type="row.severity === 3 ? 'danger' : row.severity === 2 ? 'warning' : 'info'">
@@ -105,15 +105,15 @@
             <el-table-column prop="advice" label="处理建议" width="150" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="row.status === 0 ? 'warning' : row.status === 1 ? 'primary' : 'success'">
-                  {{ row.status === 0 ? '待确认' : row.status === 1 ? '已确认' : '已消除' }}
+                <el-tag :type="getStatusLabel(row.status).type">
+                  {{ getStatusLabel(row.status).text }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="150">
               <template #default="{ row }">
-                <el-button type="primary" link size="small" v-if="row.status === 0" @click="confirmAnomaly(row)">确认</el-button>
-                <el-button type="success" link size="small" v-if="row.status === 1" @click="resolveAnomaly(row)">消除</el-button>
+                <el-button type="primary" link size="small" v-if="row.status === 'PENDING'" @click="confirmAnomaly(row)">确认</el-button>
+                <el-button type="success" link size="small" v-if="row.status === 'CONFIRMED'" @click="resolveAnomaly(row)">消除</el-button>
                 <el-button type="info" link size="small" @click="viewDetail(row)">详情</el-button>
               </template>
             </el-table-column>
@@ -209,6 +209,7 @@ import { ref, onMounted } from 'vue'
 import { WarningFilled, Warning, CircleCheck, Timer } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { anomalyApi, alertApi } from '@/api'
 
 const tempPredictChartRef = ref(null)
 const accuracyChartRef = ref(null)
@@ -217,17 +218,17 @@ const predictType = ref('')
 const severity = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(15)
+const total = ref(0)
 const selectedPoint = ref('1号楼101室')
 const accuracyRange = ref('week')
 const detailDialogVisible = ref(false)
 const monitorPoints = ref(['1号楼101室', '2号楼入口', '3号循环泵'])
 
 const predictionStats = ref({
-  pendingCount: 5,
-  highProbaCount: 3,
-  accuracy: 92.5,
-  avgLeadTime: '2.5小时'
+  pendingCount: 0,
+  highProbaCount: 0,
+  accuracy: 0,
+  avgLeadTime: '0小时'
 })
 
 const modelConfig = ref({
@@ -238,13 +239,7 @@ const modelConfig = ref({
 
 const currentDetail = ref({})
 
-const predictionList = ref([
-  { predictTime: '2026-03-15 10:00:00', type: '温度异常', location: '1号楼101室', anomalyProb: 85, occurTime: '2026-03-15 14:00:00', leadTime: '4小时', severity: 3, description: '预计温度骤降至16°C以下', advice: '检查供热系统', status: 0 },
-  { predictTime: '2026-03-15 09:30:00', type: '压力异常', location: '2号楼入口', anomalyProb: 72, occurTime: '2026-03-15 12:00:00', leadTime: '2.5小时', severity: 2, description: '预计压力下降超过10%', advice: '检查管网泄漏', status: 1 },
-  { predictTime: '2026-03-15 09:00:00', type: '设备故障', location: '3号循环泵', anomalyProb: 68, occurTime: '2026-03-16 08:00:00', leadTime: '23小时', severity: 2, description: '轴承温度异常升高', advice: '准备备件检修', status: 0 },
-  { predictTime: '2026-03-15 08:30:00', type: '流量异常', location: '4号楼支路', anomalyProb: 55, occurTime: '2026-03-15 11:00:00', leadTime: '2.5小时', severity: 1, description: '流量波动超过正常范围', advice: '观察运行', status: 2 },
-  { predictTime: '2026-03-15 08:00:00', type: '温度异常', location: '5号楼202室', anomalyProb: 52, occurTime: '2026-03-15 10:30:00', leadTime: '2.5小时', severity: 1, description: '温度偏高趋势', advice: '适当降低供热', status: 0 }
-])
+const predictionList = ref([])
 
 const getProgressColor = (percentage) => {
   if (percentage >= 80) return '#f56c6c'
@@ -252,22 +247,94 @@ const getProgressColor = (percentage) => {
   return '#67c23a'
 }
 
-const refreshPredictions = () => {
+const getTypeLabel = (type) => {
+  const typeMap = {
+    'temp': '温度异常',
+    'pressure': '压力异常',
+    'flow': '流量异常',
+    'equipment': '设备故障'
+  }
+  return typeMap[type] || type
+}
+
+const getStatusLabel = (status) => {
+  const statusMap = {
+    'PENDING': { text: '待确认', type: 'warning' },
+    'CONFIRMED': { text: '已确认', type: 'primary' },
+    'RESOLVED': { text: '已消除', type: 'success' }
+  }
+  return statusMap[status] || { text: status, type: 'info' }
+}
+
+const fetchAnomalies = async () => {
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      type: predictType.value,
+      severity: severity.value ? parseInt(severity.value) : null
+    }
+    const res = await anomalyApi.getAnomalies(params)
+    predictionList.value = res.data || []
+    total.value = res.total || 0
+  } catch (error) {
+    console.error('获取异常列表失败:', error)
+  }
+}
+
+const fetchStats = async () => {
+  try {
+    const res = await anomalyApi.getAnomalyStats()
+    predictionStats.value = res || {
+      pendingCount: 0,
+      highProbaCount: 0,
+      accuracy: 0,
+      avgLeadTime: '0小时'
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
+}
+
+const refreshPredictions = async () => {
+  await fetchAnomalies()
+  await fetchStats()
   ElMessage.success('预测数据已刷新')
 }
 
-const confirmAnomaly = (row) => {
-  row.status = 1
-  ElMessage.success('异常已确认')
+const confirmAnomaly = async (row) => {
+  try {
+    await anomalyApi.confirmAnomaly(row.id, '')
+    row.status = 'CONFIRMED'
+    ElMessage.success('异常已确认')
+    await fetchStats()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
 }
 
-const resolveAnomaly = (row) => {
-  row.status = 2
-  ElMessage.success('异常已消除')
+const resolveAnomaly = async (row) => {
+  try {
+    await anomalyApi.resolveAnomaly(row.id)
+    row.status = 'RESOLVED'
+    ElMessage.success('异常已消除')
+    await fetchStats()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
 }
 
 const viewDetail = (row) => {
-  currentDetail.value = row
+  currentDetail.value = {
+    type: getTypeLabel(row.metricType),
+    anomalyProb: row.anomalyScore ? Math.round(row.anomalyScore * 100) : 0,
+    location: row.deviceName || row.deviceId,
+    severity: row.severity,
+    predictTime: row.detectedAt,
+    occurTime: row.detectedAt,
+    description: row.description,
+    advice: row.advice
+  }
   detailDialogVisible.value = true
 }
 
@@ -328,7 +395,9 @@ const initAccuracyChart = () => {
   chart.setOption(option)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchStats()
+  await fetchAnomalies()
   initTempPredictChart()
   initAccuracyChart()
 })

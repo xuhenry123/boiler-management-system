@@ -441,3 +441,95 @@ INSERT INTO prediction_model (model_type, model_version, accuracy, mse, status) 
 INSERT INTO sys_user (username, password, real_name, phone, role_id, status) VALUES
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', '13800138000', 1, 1),
 ('operator', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '操作员', '13800138001', 2, 1);
+
+-- ===============================
+-- 异常状态预测模块表结构
+-- ===============================
+
+-- 监测数据表
+CREATE TABLE IF NOT EXISTS monitor_data (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    device_id VARCHAR(50) NOT NULL COMMENT '设备ID',
+    device_type VARCHAR(50) COMMENT '设备类型: temperature_sensor/pressure_sensor/flow_meter/valve',
+    metric_type VARCHAR(50) COMMENT '指标类型: temperature/pressure/flow',
+    metric_value DECIMAL(10,4) COMMENT '指标值',
+    timestamp DATETIME COMMENT '采集时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_device_id (device_id),
+    INDEX idx_device_type (device_type),
+    INDEX idx_metric_type (metric_type),
+    INDEX idx_timestamp (timestamp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='监测数据表';
+
+-- 异常记录表
+CREATE TABLE IF NOT EXISTS anomaly_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    device_id VARCHAR(50) NOT NULL COMMENT '设备ID',
+    device_name VARCHAR(100) COMMENT '设备名称',
+    metric_type VARCHAR(50) COMMENT '指标类型',
+    metric_value DECIMAL(10,4) COMMENT '异常值',
+    threshold DECIMAL(10,4) COMMENT '阈值',
+    anomaly_score DECIMAL(5,4) COMMENT '异常分数',
+    anomaly_type VARCHAR(50) COMMENT '异常类型: threshold/statistical/trend/prediction',
+    detection_method VARCHAR(50) COMMENT '检测方法: rule/isolation_forest/lstm/prophet',
+    severity INT DEFAULT 1 COMMENT '严重程度: 1-轻微 2-一般 3-严重',
+    description VARCHAR(500) COMMENT '异常描述',
+    advice VARCHAR(500) COMMENT '处理建议',
+    detected_at DATETIME COMMENT '检测时间',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING/CONFIRMED/RESOLVED',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_device_id (device_id),
+    INDEX idx_metric_type (metric_type),
+    INDEX idx_severity (severity),
+    INDEX idx_status (status),
+    INDEX idx_detected_at (detected_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='异常记录表';
+
+-- 告警配置表
+CREATE TABLE IF NOT EXISTS alert_config (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    config_name VARCHAR(100) NOT NULL COMMENT '配置名称',
+    device_type VARCHAR(50) COMMENT '设备类型',
+    metric_type VARCHAR(50) COMMENT '指标类型',
+    threshold_min DECIMAL(10,4) COMMENT '最小阈值',
+    threshold_max DECIMAL(10,4) COMMENT '最大阈值',
+    severity INT DEFAULT 2 COMMENT '告警级别: 1-INFO 2-WARN 3-CRITICAL',
+    alert_enabled TINYINT DEFAULT 1 COMMENT '是否启用告警',
+    wechat_enabled TINYINT DEFAULT 1 COMMENT '是否启用微信通知',
+    alert_message VARCHAR(500) COMMENT '告警消息模板',
+    advice VARCHAR(500) COMMENT '处理建议',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0-禁用 1-正常',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_device_type (device_type),
+    INDEX idx_metric_type (metric_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警配置表';
+
+-- 告警记录表
+CREATE TABLE IF NOT EXISTS alert_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    anomaly_id BIGINT COMMENT '关联异常ID',
+    alert_level VARCHAR(20) COMMENT '告警级别: INFO/WARN/CRITICAL',
+    alert_message VARCHAR(500) COMMENT '告警消息',
+    alert_time DATETIME COMMENT '告警时间',
+    acknowledged TINYINT DEFAULT 0 COMMENT '是否已确认: 0-否 1-是',
+    acknowledged_by VARCHAR(50) COMMENT '确认人',
+    acknowledged_at DATETIME COMMENT '确认时间',
+    remark VARCHAR(500) COMMENT '备注',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_anomaly_id (anomaly_id),
+    INDEX idx_alert_level (alert_level),
+    INDEX idx_alert_time (alert_time),
+    INDEX idx_acknowledged (acknowledged)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警记录表';
+
+-- 插入默认告警配置数据
+INSERT INTO alert_config (config_name, device_type, metric_type, threshold_min, threshold_max, severity, alert_enabled, wechat_enabled, alert_message, advice) VALUES
+('温度上限告警', 'temperature_sensor', 'temperature', NULL, 30.00, 3, 1, 1, '温度超过上限 {threshold}°C', '检查供热系统是否过热'),
+('温度下限告警', 'temperature_sensor', 'temperature', 14.00, NULL, 3, 1, 1, '温度低于下限 {threshold}°C', '检查供热系统是否正常'),
+('压力上限告警', 'pressure_sensor', 'pressure', NULL, 1.60, 3, 1, 1, '压力超过上限 {threshold}MPa', '检查管网是否超压'),
+('压力下限告警', 'pressure_sensor', 'pressure', 0.40, NULL, 3, 1, 1, '压力低于下限 {threshold}MPa', '检查管网是否泄漏'),
+('流量异常告警', 'flow_meter', 'flow', 0.50, 10.00, 2, 1, 1, '流量超出正常范围', '检查管网平衡');

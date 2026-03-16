@@ -91,3 +91,28 @@ export const alarmApi = {
   acknowledgeAlarm: (id) => apiClient.post(`/alarm/${id}/acknowledge`),
   getAlarmStats: () => apiClient.get('/alarm/stats')
 }
+
+export const anomalyApi = {
+  getAnomalies: (params) => apiClient.get('/anomaly/list', { params }),
+  getAnomalyById: (id) => apiClient.get(`/anomaly/${id}`),
+  getPendingAnomalies: () => apiClient.get('/anomaly/pending'),
+  createAnomaly: (data) => apiClient.post('/anomaly', data),
+  confirmAnomaly: (id, remark) => apiClient.put(`/anomaly/${id}/confirm`, { remark }),
+  resolveAnomaly: (id) => apiClient.put(`/anomaly/${id}/resolve`),
+  getAnomalyStats: () => apiClient.get('/anomaly/stats'),
+  getAnomaliesByDevice: (deviceId) => apiClient.get(`/anomaly/device/${deviceId}`)
+}
+
+export const alertApi = {
+  getAlertConfigs: (params) => apiClient.get('/alert/config/list', { params }),
+  getAlertConfigById: (id) => apiClient.get(`/alert/config/${id}`),
+  createAlertConfig: (data) => apiClient.post('/alert/config', data),
+  updateAlertConfig: (id, data) => apiClient.put(`/alert/config/${id}`, data),
+  deleteAlertConfig: (id) => apiClient.delete(`/alert/config/${id}`),
+  getEnabledConfigs: () => apiClient.get('/alert/config/enabled'),
+  
+  getAlertRecords: (params) => apiClient.get('/alert/list', { params }),
+  createAlert: (data) => apiClient.post('/alert', data),
+  acknowledgeAlert: (id, acknowledgedBy) => apiClient.put(`/alert/${id}/acknowledge`, { acknowledgedBy }),
+  getUnacknowledgedCount: () => apiClient.get('/alert/unacknowledged/count')
+}
