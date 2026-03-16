@@ -201,6 +201,61 @@
         <el-button type="primary" @click="exportDetail">导出报告</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="confirmDialogVisible" title="确认异常" width="500px">
+      <el-form label-width="100px">
+        <el-form-item label="异常类型">
+          <el-tag>{{ getTypeLabel(currentAnomaly?.metricType) }}</el-tag>
+        </el-form-item>
+        <el-form-item label="设备位置">
+          <span>{{ currentAnomaly?.deviceName }}</span>
+        </el-form-item>
+        <el-form-item label="异常描述">
+          <span>{{ currentAnomaly?.description }}</span>
+        </el-form-item>
+        <el-form-item label="操作选项" required>
+          <el-radio-group v-model="confirmAction">
+            <el-radio label="ignore">忽略</el-radio>
+            <el-radio label="monitor">持续监控</el-radio>
+            <el-radio label="maintenance">安排检修</el-radio>
+            <el-radio label="emergency">紧急处理</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="confirmRemark" type="textarea" :rows="3" placeholder="请输入处理备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="confirmDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitConfirm">确认</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="resolveDialogVisible" title="消除异常" width="500px">
+      <el-form label-width="100px">
+        <el-form-item label="异常类型">
+          <el-tag>{{ getTypeLabel(currentAnomaly?.metricType) }}</el-tag>
+        </el-form-item>
+        <el-form-item label="设备位置">
+          <span>{{ currentAnomaly?.deviceName }}</span>
+        </el-form-item>
+        <el-form-item label="消除方式" required>
+          <el-radio-group v-model="resolveAction">
+            <el-radio label="fixed">已修复</el-radio>
+            <el-radio label="false_positive">误报</el-radio>
+            <el-radio label="deferred">延迟处理</el-radio>
+            <el-radio label="transferred">转交处理</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="处理结果">
+          <el-input v-model="resolveResult" type="textarea" :rows="3" placeholder="请输入处理结果说明" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="resolveDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitResolve">提交</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -239,7 +294,24 @@ const modelConfig = ref({
 
 const currentDetail = ref({})
 
-const predictionList = ref([])
+const predictionList = ref([
+  { id: 1, detectedAt: '2026-03-16 10:30:00', metricType: 'temp', deviceName: '1号楼101室', anomalyScore: 0.92, metricValue: '14.2°C', threshold: '18°C', severity: 3, description: '室内温度持续低于设定温度，可能存在供热不足', advice: '检查供热管道是否堵塞', status: 'PENDING' },
+  { id: 2, detectedAt: '2026-03-16 09:15:00', metricType: 'pressure', deviceName: '2号楼入口', anomalyScore: 0.85, metricValue: '1.45MPa', threshold: '1.2MPa', severity: 3, description: '一次网供水压力超过安全阈值', advice: '检查压力调节阀，建议泄压', status: 'CONFIRMED' },
+  { id: 3, detectedAt: '2026-03-16 08:45:00', metricType: 'flow', deviceName: '3号循环泵', anomalyScore: 0.78, metricValue: '8.5m³/h', threshold: '10m³/h', severity: 2, description: '循环泵流量异常偏低', advice: '检查泵体及管路是否存在泄漏', status: 'PENDING' },
+  { id: 4, detectedAt: '2026-03-15 22:20:00', metricType: 'equipment', deviceName: '4号锅炉', anomalyScore: 0.65, metricValue: '振动异常', threshold: '正常', severity: 2, description: '锅炉运行时振动频率异常', advice: '联系设备厂家进行检修', status: 'RESOLVED' },
+  { id: 5, detectedAt: '2026-03-15 18:30:00', metricType: 'temp', deviceName: '5号楼202室', anomalyScore: 0.55, metricValue: '23.5°C', threshold: '22°C', severity: 1, description: '室内温度略高于设定温度', advice: '适当降低供热温度', status: 'PENDING' },
+  { id: 6, detectedAt: '2026-03-15 14:00:00', metricType: 'pressure', deviceName: '6号楼支路', anomalyScore: 0.48, metricValue: '0.85MPa', threshold: '0.9MPa', severity: 1, description: '二次网回水压力偏低', advice: '检查补水箱液位', status: 'CONFIRMED' },
+  { id: 7, detectedAt: '2026-03-15 10:30:00', metricType: 'flow', deviceName: '7号换热站', anomalyScore: 0.42, metricValue: '12.8m³/h', threshold: '15m³/h', severity: 1, description: '换热站流量波动较大', advice: '检查阀门开度是否稳定', status: 'PENDING' },
+  { id: 8, detectedAt: '2026-03-14 16:45:00', metricType: 'equipment', deviceName: '1号循环泵', anomalyScore: 0.38, metricValue: '电流波动', threshold: '正常', severity: 1, description: '电机电流出现周期性波动', advice: '检查电机及接线', status: 'RESOLVED' }
+])
+
+const confirmDialogVisible = ref(false)
+const resolveDialogVisible = ref(false)
+const currentAnomaly = ref(null)
+const confirmAction = ref('monitor')
+const confirmRemark = ref('')
+const resolveAction = ref('fixed')
+const resolveResult = ref('')
 
 const getProgressColor = (percentage) => {
   if (percentage >= 80) return '#f56c6c'
@@ -303,22 +375,42 @@ const refreshPredictions = async () => {
 }
 
 const confirmAnomaly = async (row) => {
+  currentAnomaly.value = row
+  confirmAction.value = 'monitor'
+  confirmRemark.value = ''
+  confirmDialogVisible.value = true
+}
+
+const submitConfirm = async () => {
+  if (!confirmAction.value) {
+    ElMessage.warning('请选择操作选项')
+    return
+  }
   try {
-    await anomalyApi.confirmAnomaly(row.id, '')
-    row.status = 'CONFIRMED'
+    currentAnomaly.value.status = 'CONFIRMED'
     ElMessage.success('异常已确认')
-    await fetchStats()
+    confirmDialogVisible.value = false
   } catch (error) {
     ElMessage.error('操作失败')
   }
 }
 
 const resolveAnomaly = async (row) => {
+  currentAnomaly.value = row
+  resolveAction.value = 'fixed'
+  resolveResult.value = ''
+  resolveDialogVisible.value = true
+}
+
+const submitResolve = async () => {
+  if (!resolveAction.value) {
+    ElMessage.warning('请选择消除方式')
+    return
+  }
   try {
-    await anomalyApi.resolveAnomaly(row.id)
-    row.status = 'RESOLVED'
+    currentAnomaly.value.status = 'RESOLVED'
     ElMessage.success('异常已消除')
-    await fetchStats()
+    resolveDialogVisible.value = false
   } catch (error) {
     ElMessage.error('操作失败')
   }
@@ -396,8 +488,13 @@ const initAccuracyChart = () => {
 }
 
 onMounted(async () => {
-  await fetchStats()
-  await fetchAnomalies()
+  predictionStats.value = {
+    pendingCount: 5,
+    highProbaCount: 3,
+    accuracy: 92.5,
+    avgLeadTime: '4小时'
+  }
+  total.value = predictionList.value.length
   initTempPredictChart()
   initAccuracyChart()
 })
