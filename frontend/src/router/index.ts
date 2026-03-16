@@ -148,6 +148,12 @@ const routes = [
     name: 'MultiEnergyOptimization',
     component: () => import('@/views/multi-energy-optimization/index.vue'),
     meta: { title: '多能耦合寻优' }
+  },
+  {
+    path: '/steam-management',
+    name: 'SteamManagement',
+    component: () => import('@/views/steam-management/index.vue'),
+    meta: { title: '蒸汽管理' }
   }
 ]
 

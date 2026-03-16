@@ -441,3 +441,106 @@ INSERT INTO prediction_model (model_type, model_version, accuracy, mse, status) 
 INSERT INTO sys_user (username, password, real_name, phone, role_id, status) VALUES
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', '13800138000', 1, 1),
 ('operator', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '操作员', '13800138001', 2, 1);
+
+-- ===============================
+-- 蒸汽管理模块表结构
+-- ===============================
+
+-- 蒸汽锅炉设备表
+CREATE TABLE IF NOT EXISTS steam_boiler (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    name VARCHAR(100) NOT NULL COMMENT '锅炉名称',
+    enterprise_id VARCHAR(32) NOT NULL COMMENT '企业ID',
+    enterprise_name VARCHAR(100) COMMENT '企业名称',
+    capacity DECIMAL(10,2) COMMENT '额定蒸发量(吨/小时)',
+    model VARCHAR(100) COMMENT '型号',
+    status VARCHAR(20) DEFAULT 'offline' COMMENT '状态: online/offline/maintenance',
+    max_pressure DECIMAL(10,2) COMMENT '最大工作压力(MPa)',
+    min_pressure DECIMAL(10,2) COMMENT '最小工作压力(MPa)',
+    rated_temperature DECIMAL(10,2) COMMENT '额定温度(°C)',
+    install_date DATE COMMENT '安装日期',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_enterprise_id (enterprise_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='蒸汽锅炉设备表';
+
+-- 蒸汽数据点表（时序数据）
+CREATE TABLE IF NOT EXISTS steam_data_point (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    boiler_id VARCHAR(32) NOT NULL COMMENT '锅炉ID',
+    steam_pressure DECIMAL(10,2) COMMENT '蒸汽压力(MPa)',
+    steam_temperature DECIMAL(10,2) COMMENT '蒸汽温度(°C)',
+    steam_flow DECIMAL(10,2) COMMENT '蒸汽流量(吨/小时)',
+    water_consumption DECIMAL(10,2) COMMENT '用水量(吨)',
+    electricity_consumption DECIMAL(10,2) COMMENT '用电量(kWh)',
+    efficiency DECIMAL(5,2) COMMENT '效率(%)',
+    data_time TIMESTAMP NOT NULL COMMENT '数据时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_boiler_time (boiler_id, data_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='蒸汽数据点表';
+
+-- 用户画像表
+CREATE TABLE IF NOT EXISTS user_profile (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    enterprise_id VARCHAR(32) NOT NULL UNIQUE COMMENT '企业ID',
+    enterprise_name VARCHAR(100) COMMENT '企业名称',
+    production_pattern JSON COMMENT '生产规律特征',
+    energy_features JSON COMMENT '能耗特征',
+    profile_score INT DEFAULT 0 COMMENT '画像评分',
+    last_updated DATETIME COMMENT '最后更新时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_enterprise_id (enterprise_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户画像表';
+
+-- 能耗记录表
+CREATE TABLE IF NOT EXISTS energy_consumption (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    enterprise_id VARCHAR(32) NOT NULL COMMENT '企业ID',
+    enterprise_name VARCHAR(100) COMMENT '企业名称',
+    steam_amount DECIMAL(10,2) COMMENT '蒸汽用量(吨)',
+    water_amount DECIMAL(10,2) COMMENT '用水量(吨)',
+    electricity_amount DECIMAL(10,2) COMMENT '用电量(kWh)',
+    standard_coal DECIMAL(10,2) COMMENT '标煤(吨)',
+    record_date DATE NOT NULL COMMENT '记录日期',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_enterprise_date (enterprise_id, record_date),
+    INDEX idx_enterprise_id (enterprise_id),
+    INDEX idx_record_date (record_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='能耗记录表';
+
+-- 锅炉运行策略表
+CREATE TABLE IF NOT EXISTS steam_strategy (
+    id VARCHAR(32) PRIMARY KEY COMMENT '主键ID',
+    boiler_id VARCHAR(32) NOT NULL COMMENT '锅炉ID',
+    strategy_type VARCHAR(20) COMMENT '策略类型: power/schedule/optimize',
+    target_power DECIMAL(10,2) COMMENT '目标功率',
+    schedule JSON COMMENT '运行计划',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT '状态: draft/active/suspended',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_boiler_id (boiler_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='锅炉运行策略表';
+
+-- 蒸汽告警记录表
+CREATE TABLE IF NOT EXISTS steam_alarm (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    boiler_id VARCHAR(32) COMMENT '锅炉ID',
+    enterprise_id VARCHAR(32) COMMENT '企业ID',
+    alarm_type VARCHAR(20) NOT NULL COMMENT '告警类型: pressure_high/pressure_low/temp_high/efficiency_low/offline',
+    alarm_level TINYINT NOT NULL COMMENT '告警级别: 1-Info 2-Warning 3-Critical',
+    alarm_message VARCHAR(500) COMMENT '告警消息',
+    alarm_value DECIMAL(10,2) COMMENT '告警值',
+    threshold_value DECIMAL(10,2) COMMENT '阈值',
+    start_time DATETIME COMMENT '开始时间',
+    end_time DATETIME COMMENT '结束时间',
+    acknowledged TINYINT DEFAULT 0 COMMENT '是否确认: 0-未确认 1-已确认',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_boiler_id (boiler_id),
+    INDEX idx_enterprise_id (enterprise_id),
+    INDEX idx_alarm_type (alarm_type),
+    INDEX idx_alarm_level (alarm_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='蒸汽告警记录表';
