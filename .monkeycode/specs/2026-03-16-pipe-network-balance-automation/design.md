@@ -301,3 +301,41 @@ Minimize: F = w1 * Σ|Ti - Ttarget| + w2 * ΣQi * ΔPi
 | 5 | 前端界面开发 | 2周 |
 | 6 | 系统集成与测试 | 2周 |
 
+## 已实现组件
+
+### 后端实现
+
+| 组件 | 路径 | 状态 |
+|------|------|------|
+| 管网节点实体 | `entity/PipeNode.java` | 已完成 |
+| 管网管段实体 | `entity/PipeSegment.java` | 已完成 |
+| 平衡配置实体 | `entity/BalanceConfig.java` | 已完成 |
+| 平衡策略实体 | `entity/BalanceStrategy.java` | 已完成 |
+| 节点Mapper | `mapper/PipeNodeMapper.java` | 已完成 |
+| 管段Mapper | `mapper/PipeSegmentMapper.java` | 已完成 |
+| 平衡配置Mapper | `mapper/BalanceConfigMapper.java` | 已完成 |
+| 平衡策略Mapper | `mapper/BalanceStrategyMapper.java` | 已完成 |
+| 平衡优化服务 | `service/BalanceOptimizationService.java` | 已完成 |
+| 管网平衡服务 | `service/PipeNetworkBalanceService.java` | 已完成 |
+| 平衡控制器 | `controller/PipeNetworkBalanceController.java` | 已完成 |
+
+### 前端实现
+
+| 组件 | 路径 | 状态 |
+|------|------|------|
+| 管网平衡API | `api/index.ts` (pipeNetworkApi) | 已完成 |
+| 管网平衡分析页面 | `views/network-analysis/index.vue` | 已完成 |
+| 平衡策略配置页面 | `views/balance-strategy/index.vue` | 已完成 |
+
+### API接口
+
+| 接口 | 方法 | 路径 | 状态 |
+|------|------|------|------|
+| 获取管网拓扑 | GET | `/api/balance/topology` | 已完成 |
+| 获取管网状态 | GET | `/api/balance/status` | 已完成 |
+| 执行优化计算 | POST | `/api/balance/optimize` | 已完成 |
+| 获取阀门调节建议 | GET | `/api/balance/strategy` | 已完成 |
+| 获取平衡配置 | GET | `/api/balance/config` | 已完成 |
+| 更新平衡配置 | PUT | `/api/balance/config` | 已完成 |
+| 获取平衡历史 | GET | `/api/balance/history` | 已完成 |
+

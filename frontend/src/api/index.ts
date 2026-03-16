@@ -116,3 +116,16 @@ export const alertApi = {
   acknowledgeAlert: (id, acknowledgedBy) => apiClient.put(`/alert/${id}/acknowledge`, { acknowledgedBy }),
   getUnacknowledgedCount: () => apiClient.get('/alert/unacknowledged/count')
 }
+
+export const pipeNetworkApi = {
+  getNetworkTopology: (networkType) => apiClient.get('/balance/topology', { params: { networkType } }),
+  getNetworkStatus: (networkType) => apiClient.get('/balance/status', { params: { networkType } }),
+  executeOptimization: (networkType, stationId, algorithm) => 
+    apiClient.post('/balance/optimize', null, { params: { networkType, stationId, algorithm } }),
+  getValveAdjustmentSuggestions: (networkType) => 
+    apiClient.get('/balance/strategy', { params: { networkType } }),
+  getBalanceConfig: (networkType) => apiClient.get('/balance/config', { params: { networkType } }),
+  updateBalanceConfig: (config) => apiClient.put('/balance/config', config),
+  getBalanceHistory: (networkType, limit) => 
+    apiClient.get('/balance/history', { params: { networkType, limit } })
+}
