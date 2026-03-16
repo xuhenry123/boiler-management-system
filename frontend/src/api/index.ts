@@ -12,9 +12,55 @@ apiClient.interceptors.response.use(
   response => response.data,
   error => {
     console.error('API Error:', error)
+    const url = error.config?.url || ''
+    if (url.includes('/climate/')) {
+      return mockClimateApi(url, error.config?.method)
+    }
     return Promise.reject(error)
   }
 )
+
+const mockClimateApi = (url, method) => {
+  if (!window.MockAPI) return Promise.reject(new Error('MockAPI not found'))
+  if (url.includes('/climate/config') && method === 'get') {
+    return Promise.resolve({ data: [] })
+  }
+  if (url.includes('/climate/curve') && method === 'get') {
+    return Promise.resolve({
+      curves: [
+        { outdoorTemp: -20, supplyTemp: 75, returnTemp: 55 },
+        { outdoorTemp: -15, supplyTemp: 68, returnTemp: 50 },
+        { outdoorTemp: -10, supplyTemp: 60, returnTemp: 44 },
+        { outdoorTemp: -5, supplyTemp: 52, returnTemp: 38 },
+        { outdoorTemp: 0, supplyTemp: 45, returnTemp: 33 },
+        { outdoorTemp: 5, supplyTemp: 40, returnTemp: 30 },
+        { outdoorTemp: 10, supplyTemp: 35, returnTemp: 28 }
+      ]
+    })
+  }
+  if (url.includes('/climate/effect') && method === 'get') {
+    return Promise.resolve({
+      data: [
+        { recordDate: '2026-03-10', energyBefore: 52, energyAfter: 45 },
+        { recordDate: '2026-03-11', energyBefore: 48, energyAfter: 42 },
+        { recordDate: '2026-03-12', energyBefore: 55, energyAfter: 48 },
+        { recordDate: '2026-03-13', energyBefore: 50, energyAfter: 44 },
+        { recordDate: '2026-03-14', energyBefore: 45, energyAfter: 40 },
+        { recordDate: '2026-03-15', energyBefore: 42, energyAfter: 37 },
+        { recordDate: '2026-03-16', energyBefore: 46, energyAfter: 40 }
+      ]
+    })
+  }
+  if (url.includes('/climate/statistics') && method === 'get') {
+    return Promise.resolve({
+      currentMode: '智能补偿',
+      outdoorTemp: -5,
+      supplyTemp: 52,
+      savingsRate: 12.5
+    })
+  }
+  return Promise.reject(new Error('No mock data'))
+}
 
 export const heatUserApi = {
   getUsers: (params) => apiClient.get('/heat-user', { params }),
