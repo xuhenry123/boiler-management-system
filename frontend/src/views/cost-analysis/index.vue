@@ -61,7 +61,7 @@
 
       <el-row :gutter="20" style="margin-top: 20px">
         <el-col :span="16">
-          <el-card shadow="hover>
+          <el-card shadow="hover">
             <template #header>
               <span>成本趋势</span>
             </template>
@@ -69,7 +69,7 @@
           </el-card>
         </el-col>
         <el-col :span="8">
-          <el-card shadow="hover>
+          <el-card shadow="hover">
             <template #header>
               <span>能源类型分布</span>
             </template>
@@ -80,7 +80,7 @@
 
       <el-row :gutter="20" style="margin-top: 20px">
         <el-col :span="24">
-          <el-card shadow="hover>
+          <el-card shadow="hover">
             <template #header>
               <div class="card-header">
                 <span>多维度排名</span>
@@ -118,7 +118,7 @@
 
       <el-row :gutter="20" style="margin-top: 20px">
         <el-col :span="24">
-          <el-card shadow="hover>
+          <el-card shadow="hover">
             <template #header>
               <span>成本明细</span>
             </template>
