@@ -116,3 +116,19 @@ export const alertApi = {
   acknowledgeAlert: (id, acknowledgedBy) => apiClient.put(`/alert/${id}/acknowledge`, { acknowledgedBy }),
   getUnacknowledgedCount: () => apiClient.get('/alert/unacknowledged/count')
 }
+
+export const climateApi = {
+  getConfigs: (params) => apiClient.get('/climate/config', { params }),
+  getConfigById: (id) => apiClient.get(`/climate/config/${id}`),
+  getActiveConfig: (stationId) => apiClient.get('/climate/config/active', { params: { stationId } }),
+  createConfig: (data) => apiClient.post('/climate/config', data),
+  updateConfig: (id, data) => apiClient.put(`/climate/config/${id}`, data),
+  deleteConfig: (id) => apiClient.delete(`/climate/config/${id}`),
+
+  getCurves: (params) => apiClient.get('/climate/curve', { params }),
+  saveCurves: (configId, curves) => apiClient.post('/climate/curve', curves, { params: { configId } }),
+
+  getEffects: (params) => apiClient.get('/climate/effect', { params }),
+
+  getStatistics: (stationId) => apiClient.get('/climate/statistics', { params: { stationId } })
+}

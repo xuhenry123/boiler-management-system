@@ -269,6 +269,7 @@ import { ref, onMounted } from 'vue'
 import { Sunny, TrendCharts, DataLine, Edit } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { climateApi } from '@/api'
 
 const compensationCurveRef = ref(null)
 const effectCompareRef = ref(null)
@@ -329,7 +330,53 @@ const updateCurve = () => {
 }
 
 const saveConfig = () => {
-  ElMessage.success('配置已保存')
+  const configData = {
+    stationId: 1,
+    configName: selectedCurve.value === 'standard' ? '标准补偿' : selectedCurve.value === 'energy_saving' ? '节能模式' : '舒适模式',
+    compensationMode: compensationMode.value,
+    curveType: selectedCurve.value,
+    outdoorTempMin: minOutdoorTemp.value,
+    outdoorTempMax: maxOutdoorTemp.value,
+    indoorTargetTemp: indoorTarget.value,
+    isActive: compensationEnabled.value ? 1 : 0,
+    isEnabled: compensationEnabled.value ? 1 : 0
+  }
+  
+  climateApi.getConfigs({}).then(res => {
+    const existingConfigs = res.data || []
+    const activeConfig = existingConfigs.find(c => c.isActive === 1)
+    
+    if (activeConfig) {
+      climateApi.updateConfig(activeConfig.id, configData).then(() => {
+        ElMessage.success('配置已保存')
+        loadConfigs()
+      })
+    } else {
+      climateApi.createConfig(configData).then(() => {
+        ElMessage.success('配置已保存')
+        loadConfigs()
+      })
+    }
+  }).catch(() => {
+    climateApi.createConfig(configData).then(() => {
+      ElMessage.success('配置已保存')
+      loadConfigs()
+    })
+  })
+}
+
+const loadConfigs = () => {
+  climateApi.getConfigs({}).then(data => {
+    if (data.data && data.data.length > 0) {
+      strategyList.value = data.data.map(c => ({
+        name: c.configName,
+        type: c.compensationMode === 'climate' ? '气候' : c.compensationMode === 'time' ? '时间' : '智能',
+        tempRange: `${c.outdoorTempMin || -20}~${c.outdoorTempMax || 10}°C`,
+        status: c.isActive === 1,
+        id: c.id
+      }))
+    }
+  })
 }
 
 const previewEffect = () => {
@@ -341,17 +388,33 @@ const previewEffect = () => {
 }
 
 const toggleStrategy = (row) => {
-  ElMessage.success(`${row.name}已${row.status ? '启用' : '禁用'}`)
+  climateApi.getConfigById(row.id).then(config => {
+    config.isActive = row.status ? 1 : 0
+    climateApi.updateConfig(row.id, config).then(() => {
+      ElMessage.success(`${row.name}已${row.status ? '启用' : '禁用'}`)
+      loadConfigs()
+    })
+  })
 }
 
 const editStrategy = (row) => {
-  newStrategy.value = { ...row }
-  showStrategyDialog.value = true
+  climateApi.getConfigById(row.id).then(config => {
+    newStrategy.value = {
+      name: config.configName,
+      type: config.compensationMode,
+      tempRange: `${config.outdoorTempMin || -20}~${config.outdoorTempMax || 10}°C`,
+      status: config.isActive === 1,
+      id: config.id
+    }
+    showStrategyDialog.value = true
+  })
 }
 
 const deleteStrategy = (row) => {
-  strategyList.value = strategyList.value.filter(s => s.name !== row.name)
-  ElMessage.success('策略已删除')
+  climateApi.deleteConfig(row.id).then(() => {
+    strategyList.value = strategyList.value.filter(s => s.id !== row.id)
+    ElMessage.success('策略已删除')
+  })
 }
 
 const addCurvePoint = () => {
@@ -365,10 +428,24 @@ const saveCurve = () => {
 }
 
 const createStrategy = () => {
-  strategyList.value.push({ ...newStrategy.value })
-  showStrategyDialog.value = false
-  newStrategy.value = { name: '', type: 'climate', tempRange: '', status: true }
-  ElMessage.success('策略已创建')
+  const configData = {
+    stationId: 1,
+    configName: newStrategy.value.name,
+    compensationMode: newStrategy.value.type,
+    curveType: 'standard',
+    outdoorTempMin: -20,
+    outdoorTempMax: 10,
+    indoorTargetTemp: 20,
+    isActive: newStrategy.value.status ? 1 : 0,
+    isEnabled: newStrategy.value.status ? 1 : 0
+  }
+  
+  climateApi.createConfig(configData).then(() => {
+    showStrategyDialog.value = false
+    newStrategy.value = { name: '', type: 'climate', tempRange: '', status: true }
+    ElMessage.success('策略已创建')
+    loadConfigs()
+  })
 }
 
 const retrainModel = () => {
@@ -387,6 +464,81 @@ const importModel = () => {
 }
 
 const initCompensationCurve = () => {
+  climateApi.getCurves({}).then(data => {
+    const chart = echarts.init(compensationCurveRef.value)
+    
+    const curves = data.curves || []
+    let supplyData = []
+    let returnData = []
+    let xData = []
+    
+    curves.forEach(item => {
+      xData.push(item.outdoorTemp.toString())
+      supplyData.push(item.supplyTemp)
+      returnData.push(item.returnTemp)
+    })
+    
+    if (xData.length === 0) {
+      xData = ['-20', '-15', '-10', '-5', '0', '5', '10']
+      if (selectedCurve.value === 'standard') {
+        supplyData = [75, 68, 60, 52, 45, 40, 35]
+        returnData = [55, 50, 44, 38, 33, 30, 28]
+      } else if (selectedCurve.value === 'energy_saving') {
+        supplyData = [70, 62, 55, 48, 42, 38, 33]
+        returnData = [50, 45, 40, 35, 30, 28, 26]
+      } else if (selectedCurve.value === 'comfort') {
+        supplyData = [80, 72, 65, 58, 50, 45, 40]
+        returnData = [60, 54, 48, 42, 36, 32, 30]
+      }
+    } else if (selectedCurve.value === 'energy_saving') {
+      supplyData = supplyData.map(v => Math.round(v * 0.93))
+      returnData = returnData.map(v => Math.round(v * 0.9))
+    } else if (selectedCurve.value === 'comfort') {
+      supplyData = supplyData.map(v => Math.round(v * 1.07))
+      returnData = returnData.map(v => Math.round(v * 1.1))
+    }
+    
+    const option = {
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['供水温度', '回水温度', '室内目标温度'] },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: xData,
+        name: '室外温度(°C)'
+      },
+      yAxis: { type: 'value', name: '温度(°C)' },
+      series: [
+        {
+          name: '供水温度',
+          type: 'line',
+          smooth: true,
+          data: supplyData,
+          itemStyle: { color: '#409eff' }
+        },
+        {
+          name: '回水温度',
+          type: 'line',
+          smooth: true,
+          data: returnData,
+          itemStyle: { color: '#67c23a' }
+        },
+        {
+          name: '室内目标温度',
+          type: 'line',
+          data: xData.map(() => indoorTarget.value),
+          lineStyle: { type: 'dashed', opacity: 0.5 },
+          itemStyle: { opacity: 0 }
+        }
+      ]
+    }
+    chart.setOption(option)
+  }).catch(() => {
+    renderDefaultCurve()
+  })
+}
+
+const renderDefaultCurve = () => {
   const chart = echarts.init(compensationCurveRef.value)
   
   let supplyData = []
@@ -441,6 +593,42 @@ const initCompensationCurve = () => {
 }
 
 const initEffectCompare = () => {
+  climateApi.getEffects({ days: 7 }).then(data => {
+    const chart = echarts.init(effectCompareRef.value)
+    const effects = data.data || []
+    
+    const xData = []
+    const beforeData = []
+    const afterData = []
+    
+    effects.forEach(item => {
+      xData.push(item.recordDate ? new Date(item.recordDate).toLocaleDateString('zh-CN', { weekday: 'short' }) : '-')
+      beforeData.push(item.energyBefore || 0)
+      afterData.push(item.energyAfter || 0)
+    })
+    
+    if (xData.length === 0) {
+      xData = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    }
+    
+    const option = {
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['补偿前', '补偿后'] },
+      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+      xAxis: { type: 'category', data: xData },
+      yAxis: { type: 'value', name: '能耗(tce)' },
+      series: [
+        { name: '补偿前', type: 'bar', data: beforeData.length ? beforeData : [52, 48, 55, 50, 45, 42, 46], itemStyle: { color: '#f56c6c' } },
+        { name: '补偿后', type: 'bar', data: afterData.length ? afterData : [45, 42, 48, 44, 40, 37, 40], itemStyle: { color: '#67c23a' } }
+      ]
+    }
+    chart.setOption(option)
+  }).catch(() => {
+    renderDefaultEffectCompare()
+  })
+}
+
+const renderDefaultEffectCompare = () => {
   const chart = echarts.init(effectCompareRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -457,6 +645,40 @@ const initEffectCompare = () => {
 }
 
 onMounted(() => {
+  climateApi.getStatistics().then(data => {
+    currentConfig.value = data.currentMode || '智能补偿'
+    outdoorTemp.value = data.outdoorTemp || -5
+    supplyTemp.value = data.supplyTemp || 52
+    savingsRate.value = data.savingsRate || 12.5
+  }).catch(() => {
+    currentConfig.value = '智能补偿'
+    outdoorTemp.value = -5
+    supplyTemp.value = 52
+    savingsRate.value = 12.5
+  })
+  
+  climateApi.getConfigs({}).then(data => {
+    if (data.data && data.data.length > 0) {
+      const activeConfig = data.data.find(c => c.isActive === 1)
+      if (activeConfig) {
+        compensationMode.value = activeConfig.compensationMode || 'climate'
+        selectedCurve.value = activeConfig.curveType || 'standard'
+        indoorTarget.value = activeConfig.indoorTargetTemp || 20
+        minOutdoorTemp.value = activeConfig.outdoorTempMin || -20
+        maxOutdoorTemp.value = activeConfig.outdoorTempMax || 10
+        compensationEnabled.value = activeConfig.isEnabled === 1
+      }
+      
+      strategyList.value = data.data.map(c => ({
+        name: c.configName,
+        type: c.compensationMode === 'climate' ? '气候' : c.compensationMode === 'time' ? '时间' : '智能',
+        tempRange: `${c.outdoorTempMin || -20}~${c.outdoorTempMax || 10}°C`,
+        status: c.isActive === 1,
+        id: c.id
+      }))
+    }
+  }).catch(() => {})
+  
   initCompensationCurve()
   initEffectCompare()
 })
