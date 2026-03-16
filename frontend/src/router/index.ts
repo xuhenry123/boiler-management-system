@@ -154,6 +154,12 @@ const routes = [
     name: 'SteamManagement',
     component: () => import('@/views/steam-management/index.vue'),
     meta: { title: '蒸汽管理' }
+  },
+  {
+    path: '/cost-analysis',
+    name: 'CostAnalysis',
+    component: () => import('@/views/cost-analysis/index.vue'),
+    meta: { title: '成本分析' }
   }
 ]
 
