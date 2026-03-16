@@ -43,6 +43,7 @@
           <el-menu-item index="/network-analysis">管网平衡分析</el-menu-item>
           <el-menu-item index="/trend-analysis">趋势分析</el-menu-item>
           <el-menu-item index="/cost-analysis">成本分析</el-menu-item>
+          <el-menu-item index="/efficiency-analysis">冷热效率分析</el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="optimization">
