@@ -172,6 +172,18 @@ const routes = [
     name: 'EfficiencyAnalysis',
     component: () => import('@/views/efficiency-analysis/index.vue'),
     meta: { title: '冷热效率分析' }
+  },
+  {
+    path: '/heat-source-station',
+    name: 'HeatSourceStation',
+    component: () => import('@/views/heat-source-station/index.vue'),
+    meta: { title: '热源站管理' }
+  },
+  {
+    path: '/cold-source-station',
+    name: 'ColdSourceStation',
+    component: () => import('@/views/cold-source-station/index.vue'),
+    meta: { title: '冷源站管理' }
   }
 ]
 

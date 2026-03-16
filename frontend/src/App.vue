@@ -76,6 +76,8 @@
           <el-menu-item index="/buildings">建筑物管理</el-menu-item>
           <el-menu-item index="/users">热用户管理</el-menu-item>
           <el-menu-item index="/stations">换热站管理</el-menu-item>
+          <el-menu-item index="/heat-source-station">热源站管理</el-menu-item>
+          <el-menu-item index="/cold-source-station">冷源站管理</el-menu-item>
           <el-menu-item index="/alarms">告警管理</el-menu-item>
         </el-sub-menu>
       </el-menu>
