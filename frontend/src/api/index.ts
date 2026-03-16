@@ -56,10 +56,65 @@ const mockClimateApi = (url, method) => {
   }
   if (url.includes('/climate/statistics') && method === 'get') {
     return Promise.resolve({
+      currentScene: 'cold',
       currentMode: '智能补偿',
       outdoorTemp: -5,
+      targetSupplyTemp: 52,
+      actualSupplyTemp: 51.2,
+      temperatureDeviation: -0.8,
+      valveOpening: 65,
       supplyTemp: 52,
       savingsRate: 12.5
+    })
+  }
+  if (url.includes('/climate/pid-templates') && method === 'get') {
+    return Promise.resolve({
+      templates: [
+        { id: 'TPL001', name: '严寒模式', sceneType: 'extreme_cold', description: '适用于严寒天气', kp: 3.0, ki: 1.0, kd: 0.5, setPoint: 55, sampleTime: 30, isBuiltIn: true },
+        { id: 'TPL002', name: '寒冷模式', sceneType: 'cold', description: '适用于寒冷天气', kp: 2.5, ki: 0.8, kd: 0.3, setPoint: 52, sampleTime: 30, isBuiltIn: true },
+        { id: 'TPL003', name: '温和模式', sceneType: 'mild', description: '适用于温和天气', kp: 2.0, ki: 0.5, kd: 0.2, setPoint: 45, sampleTime: 60, isBuiltIn: true },
+        { id: 'TPL004', name: '温暖模式', sceneType: 'warm', description: '适用于温暖天气', kp: 1.5, ki: 0.3, kd: 0.1, setPoint: 40, sampleTime: 60, isBuiltIn: true },
+        { id: 'TPL005', name: '夜间模式', sceneType: 'night', description: '适用于夜间', kp: 1.0, ki: 0.2, kd: 0.1, setPoint: 45, sampleTime: 120, isBuiltIn: true }
+      ]
+    })
+  }
+  if (url.includes('/climate/') && url.includes('/pid') && method === 'get') {
+    return Promise.resolve({
+      kp: 2.5,
+      ki: 0.8,
+      kd: 0.3,
+      setPoint: 52,
+      minOutput: 0,
+      maxOutput: 100,
+      sampleTime: 30
+    })
+  }
+  if (url.includes('/climate/') && url.includes('/integration') && method === 'get') {
+    return Promise.resolve({
+      stationId: 'ST001',
+      integrationMode: 'independent',
+      enableClimateCompensation: true,
+      enablePrimaryNetworkCoordination: false
+    })
+  }
+  if (url.includes('/climate/') && url.includes('/station-config') && method === 'get') {
+    return Promise.resolve({
+      stationId: 'ST001',
+      curveId: 'CURVE001',
+      pidTemplateId: 'TPL002',
+      customSetPoint: 50,
+      minSupplyTemp: 35,
+      maxSupplyTemp: 70,
+      buildingHeatCoeff: 1.2,
+      enableTimeSegment: true
+    })
+  }
+  if (url.includes('/climate/') && url.includes('/scene') && method === 'get') {
+    return Promise.resolve({
+      stationId: 'ST001',
+      currentScene: 'cold',
+      sceneTypeName: '寒冷模式',
+      autoSwitchEnabled: true
     })
   }
   return Promise.reject(new Error('No mock data'))
@@ -238,6 +293,7 @@ export const alertApi = {
 }
 
 export const climateApi = {
+  // 配置管理
   getConfigs: (params) => apiClient.get('/climate/config', { params }),
   getConfigById: (id) => apiClient.get(`/climate/config/${id}`),
   getActiveConfig: (stationId) => apiClient.get('/climate/config/active', { params: { stationId } }),
@@ -245,11 +301,39 @@ export const climateApi = {
   updateConfig: (id, data) => apiClient.put(`/climate/config/${id}`, data),
   deleteConfig: (id) => apiClient.delete(`/climate/config/${id}`),
 
+  // 曲线管理
   getCurves: (params) => apiClient.get('/climate/curve', { params }),
   saveCurves: (configId, curves) => apiClient.post('/climate/curve', curves, { params: { configId } }),
+  
+  // 分时段曲线
+  getTimeSegments: (curveId) => apiClient.get('/climate/curve/time-segment', { params: { curveId } }),
+  saveTimeSegments: (data) => apiClient.post('/climate/curve/time-segment', data),
 
+  // PID模板管理
+  getPIDTemplates: () => apiClient.get('/climate/pid-templates'),
+  getPIDTemplateById: (id) => apiClient.get(`/climate/pid-templates/${id}`),
+  createPIDTemplate: (data) => apiClient.post('/climate/pid-templates', data),
+  updatePIDTemplate: (id, data) => apiClient.put(`/climate/pid-templates/${id}`, data),
+  deletePIDTemplate: (id) => apiClient.delete(`/climate/pid-templates/${id}`),
+
+  // PID参数设置
+  getPIDParams: (stationId) => apiClient.get(`/climate/${stationId}/pid`),
+  setPIDParams: (stationId, data) => apiClient.post(`/climate/${stationId}/pid`, data),
+
+  // 集成模式
+  getIntegrationMode: (stationId) => apiClient.get(`/climate/${stationId}/integration`),
+  setIntegrationMode: (stationId, data) => apiClient.post(`/climate/${stationId}/integration`, data),
+
+  // 换热站个性化配置
+  getStationConfig: (stationId) => apiClient.get(`/climate/${stationId}/station-config`),
+  setStationConfig: (stationId, data) => apiClient.post(`/climate/${stationId}/station-config`, data),
+
+  // 场景模式
+  getCurrentScene: (stationId) => apiClient.get(`/climate/${stationId}/scene`),
+  switchScene: (stationId, data) => apiClient.post(`/climate/${stationId}/scene/switch`, data),
+
+  // 效果统计
   getEffects: (params) => apiClient.get('/climate/effect', { params }),
-
   getStatistics: (stationId) => apiClient.get('/climate/statistics', { params: { stationId } })
 }
 
