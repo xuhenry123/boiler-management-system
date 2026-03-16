@@ -270,3 +270,15 @@ export const riskApi = {
   
   generateReport: (type) => apiClient.get('/risk/report', { params: { type } })
 }
+
+export const efficiencyApi = {
+  getOverview: (params) => apiClient.get('/efficiency/overview', { params }),
+  getRanking: (params) => apiClient.get('/efficiency/ranking', { params }),
+  getTerminalMonitor: (params) => apiClient.get('/efficiency/terminal-monitor', { params }),
+  getComparison: (params) => apiClient.get('/efficiency/comparison', { params }),
+  getResidentTemperatures: (params) => apiClient.get('/efficiency/resident-temperatures', { params }),
+  saveResidentTemperature: (data) => apiClient.post('/efficiency/resident-temperatures/manual', data),
+  getHeatingCurve: (params) => apiClient.get('/efficiency/heating-curve', { params }),
+  applyHeatingCurve: (stationId, curve) => apiClient.post(`/efficiency/heating-curve/apply?stationId=${stationId}`, curve),
+  getTrend: (params) => apiClient.get('/efficiency/trend', { params })
+}

@@ -160,6 +160,12 @@ const routes = [
     name: 'CostAnalysis',
     component: () => import('@/views/cost-analysis/index.vue'),
     meta: { title: '成本分析' }
+  },
+  {
+    path: '/efficiency-analysis',
+    name: 'EfficiencyAnalysis',
+    component: () => import('@/views/efficiency-analysis/index.vue'),
+    meta: { title: '冷热效率分析' }
   }
 ]
 
