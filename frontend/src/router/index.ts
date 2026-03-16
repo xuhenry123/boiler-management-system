@@ -150,6 +150,12 @@ const routes = [
     meta: { title: '多能耦合寻优' }
   },
   {
+    path: '/multi-scenario-optimization',
+    name: 'MultiScenarioOptimization',
+    component: () => import('@/views/multi-scenario-optimization/index.vue'),
+    meta: { title: '多场景多目标调整' }
+  },
+  {
     path: '/steam-management',
     name: 'SteamManagement',
     component: () => import('@/views/steam-management/index.vue'),

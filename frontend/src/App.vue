@@ -55,6 +55,7 @@
           <el-menu-item index="/risk-assessment">风险评估</el-menu-item>
           <el-menu-item index="/anomaly-prediction">异常状态预测</el-menu-item>
           <el-menu-item index="/multi-energy-optimization">多能耦合寻优</el-menu-item>
+          <el-menu-item index="/multi-scenario-optimization">多场景多目标调整</el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="source-control">
