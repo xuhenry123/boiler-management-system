@@ -16,6 +16,9 @@ apiClient.interceptors.response.use(
     if (url.includes('/climate/')) {
       return mockClimateApi(url, error.config?.method)
     }
+    if (url.includes('/risk/')) {
+      return mockRiskApi(url, error.config?.method, error.config?.params)
+    }
     return Promise.reject(error)
   }
 )
@@ -57,6 +60,77 @@ const mockClimateApi = (url, method) => {
       outdoorTemp: -5,
       supplyTemp: 52,
       savingsRate: 12.5
+    })
+  }
+  return Promise.reject(new Error('No mock data'))
+}
+
+const mockRiskApi = (url, method, params) => {
+  if (!window.MockAPI) return Promise.reject(new Error('MockAPI not found'))
+  
+  if (url.includes('/risk/index') && method === 'get') {
+    return Promise.resolve({
+      compositeIndex: 72,
+      riskLevel: 'MEDIUM',
+      pendingCount: 8,
+      handledCount: 15,
+      handledRate: 65
+    })
+  }
+  if (url.includes('/risk/dimension') && method === 'get') {
+    return Promise.resolve({
+      data: [
+        { name: '设备风险', type: 'equipment', score: 72, level: 'MEDIUM', count: 5 },
+        { name: '运行风险', type: 'operation', score: 65, level: 'MEDIUM', count: 3 },
+        { name: '能效风险', type: 'energy', score: 45, level: 'LOW', count: 2 },
+        { name: '环境风险', type: 'environment', score: 38, level: 'LOW', count: 1 },
+        { name: '安全风险', type: 'safety', score: 28, level: 'LOW', count: 1 }
+      ]
+    })
+  }
+  if (url.includes('/risk/details') && method === 'get') {
+    return Promise.resolve({
+      data: [
+        { type: '设备', item: '1号锅炉效率下降', level: '高', score: 85, factors: '效率从92%下降至82%', suggestion: '检查燃烧器', status: '待处理' },
+        { type: '设备', item: '3号循环泵振动超标', level: '中', score: 68, factors: '振动幅值超过标准', suggestion: '轴承检修', status: '已处理' },
+        { type: '运行', item: '2号楼管网不平衡', level: '中', score: 65, factors: '流量偏差率12%', suggestion: '调节阀门', status: '待处理' },
+        { type: '能效', item: '系统能效比下降', level: '低', score: 45, factors: 'COP从3.2下降至2.9', suggestion: '优化运行参数', status: '已处理' },
+        { type: '安全', item: '燃气压力波动', level: '低', score: 35, factors: '压力波动在允许范围内', suggestion: '继续监控', status: '已处理' }
+      ]
+    })
+  }
+  if (url.includes('/risk/trend') && method === 'get') {
+    return Promise.resolve({
+      data: {
+        dates: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+        equipment: [65, 68, 72, 70, 75, 78, 72],
+        operation: [55, 58, 62, 60, 65, 68, 65],
+        energy: [45, 48, 52, 50, 55, 52, 45],
+        environment: [35, 38, 42, 40, 45, 42, 38],
+        safety: [30, 32, 35, 33, 38, 35, 32],
+        composite: [72, 68, 75, 70, 78, 75, 72]
+      }
+    })
+  }
+  if (url.includes('/risk/distribution') && method === 'get') {
+    return Promise.resolve({
+      data: [
+        { value: 5, name: '设备风险' },
+        { value: 3, name: '运行风险' },
+        { value: 2, name: '能效风险' },
+        { value: 1, name: '环境风险' },
+        { value: 1, name: '安全风险' }
+      ]
+    })
+  }
+  if (url.includes('/risk/alert') && method === 'get') {
+    return Promise.resolve({
+      data: [
+        { id: 1, level: 'critical', message: '1号锅炉效率低于80%，需立即检查', time: '10:30' },
+        { id: 2, level: 'warn', message: '2号楼管网流量偏差超过10%', time: '09:15' },
+        { id: 3, level: 'warn', message: '供水温度持续偏离设定值', time: '11:00' },
+        { id: 4, level: 'info', message: '明日预报低温-18°C，请注意', time: '06:00' }
+      ]
     })
   }
   return Promise.reject(new Error('No mock data'))
@@ -177,4 +251,22 @@ export const climateApi = {
   getEffects: (params) => apiClient.get('/climate/effect', { params }),
 
   getStatistics: (stationId) => apiClient.get('/climate/statistics', { params: { stationId } })
+}
+
+export const riskApi = {
+  getAssessment: () => apiClient.get('/risk/assessment'),
+  getIndex: (params) => apiClient.get('/risk/index', { params }),
+  getTrend: (params) => apiClient.get('/risk/trend', { params }),
+  getDistribution: () => apiClient.get('/risk/distribution'),
+  getDetails: (params) => apiClient.get('/risk/details', { params }),
+  handleRisk: (id, data) => apiClient.put(`/risk/handle/${id}`, data),
+  
+  getAlerts: (params) => apiClient.get('/risk/alert', { params }),
+  handleAlert: (id, data) => apiClient.put(`/risk/alert/handle/${id}`, data),
+  ignoreAlert: (id) => apiClient.put(`/risk/alert/ignore/${id}`),
+  
+  getConfig: () => apiClient.get('/risk/config'),
+  updateConfig: (data) => apiClient.put('/risk/config', data),
+  
+  generateReport: (type) => apiClient.get('/risk/report', { params: { type } })
 }
