@@ -206,6 +206,9 @@ const fetchCostData = async () => {
     let url = `${baseUrl}/monthly?year=${now.getFullYear()}&month=${now.getMonth() + 1}`
     
     const costRes = await fetch(url)
+    if (!costRes.ok) {
+      throw new Error('API not available')
+    }
     const costData = await costRes.json()
     costList.value = costData.data || []
     
@@ -216,11 +219,17 @@ const fetchCostData = async () => {
     totalConsumption.value = consumption
     
     const trendRes = await fetch(`${baseUrl}/trend?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
+    if (!trendRes.ok) {
+      throw new Error('API not available')
+    }
     const trendDataRes = await trendRes.json()
     trendData.value = trendDataRes
     initTrendChart()
     
     const summaryRes = await fetch(`${baseUrl}/summary?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
+    if (!summaryRes.ok) {
+      throw new Error('API not available')
+    }
     const summaryData = await summaryRes.json()
     energySummary.value = summaryData
     initPieChart()
@@ -237,6 +246,9 @@ const fetchRankData = async () => {
     const now = new Date()
     const url = `/api/cost/rank/${rankType.value}?period=${now.toISOString().split('T')[0]}&topN=10`
     const res = await fetch(url)
+    if (!res.ok) {
+      return
+    }
     const data = await res.json()
     rankList.value = data || []
   } catch (error) {
