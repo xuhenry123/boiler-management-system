@@ -1,5 +1,0 @@
-{"buildingCode":"BLD001","buildingName":"阳光花园1号楼","address":"东城区阳光路1号","areaHeated":12000,"buildingType":"residential","heatTransferCoefficient":1.2,"status":1,"_id":"xm0FLgcryCGknfJY"}
-{"buildingCode":"BLD002","buildingName":"阳光花园2号楼","address":"东城区阳光路2号","areaHeated":15000,"buildingType":"residential","heatTransferCoefficient":1.15,"status":1,"_id":"HDtbiCYoU4a4XKcS"}
-{"buildingCode":"BLD003","buildingName":"商业大厦A座","address":"西城区金融街8号","areaHeated":20000,"buildingType":"commercial","heatTransferCoefficient":0.9,"status":1,"_id":"hGV6NE46pOXJikic"}
-{"buildingCode":"BLD004","buildingName":"科技园区办公楼","address":"海淀区中关村1号","areaHeated":18000,"buildingType":"commercial","heatTransferCoefficient":0.85,"status":1,"_id":"YEOxcuwQFnjrD5PP"}
-{"buildingCode":"BLD005","buildingName":"市政府大楼","address":"东城区政府路1号","areaHeated":25000,"buildingType":"public","heatTransferCoefficient":0.8,"status":1,"_id":"TFbIKIJLPpNFvdRV"}
