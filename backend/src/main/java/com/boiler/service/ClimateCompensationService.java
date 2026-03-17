@@ -14,8 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * 气候补偿业务逻辑层
+ * 负责气候补偿相关的业务逻辑处理，包括配置管理、曲线管理、效果分析等
+ */
 @Service
 @RequiredArgsConstructor
 public class ClimateCompensationService {
@@ -24,6 +30,13 @@ public class ClimateCompensationService {
     private final ClimateCompensationCurveMapper curveMapper;
     private final ClimateCompensationEffectMapper effectMapper;
 
+    /**
+     * 分页查询气候补偿配置列表
+     * @param page 页码
+     * @param size 每页数量
+     * @param stationId 热力站ID
+     * @return 分页结果
+     */
     public Page<ClimateCompensationConfig> listConfigs(Integer page, Integer size, Long stationId) {
         Page<ClimateCompensationConfig> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<ClimateCompensationConfig> wrapper = new LambdaQueryWrapper<>();
@@ -34,10 +47,20 @@ public class ClimateCompensationService {
         return configMapper.selectPage(pageParam, wrapper);
     }
 
+    /**
+     * 根据ID查询气候补偿配置
+     * @param id 配置ID
+     * @return 配置信息
+     */
     public ClimateCompensationConfig getConfigById(Long id) {
         return configMapper.selectById(id);
     }
 
+    /**
+     * 获取热力站当前激活的配置
+     * @param stationId 热力站ID
+     * @return 激活的配置信息
+     */
     public ClimateCompensationConfig getActiveConfig(Long stationId) {
         LambdaQueryWrapper<ClimateCompensationConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClimateCompensationConfig::getStationId, stationId)
@@ -45,6 +68,12 @@ public class ClimateCompensationService {
         return configMapper.selectOne(wrapper);
     }
 
+    /**
+     * 保存气候补偿配置
+     * 如果配置激活，则先清除该热力站的其他激活配置
+     * @param config 配置信息
+     * @return 是否成功
+     */
     @Transactional
     public boolean saveConfig(ClimateCompensationConfig config) {
         if (config.getIsActive() != null && config.getIsActive() == 1) {
@@ -53,6 +82,12 @@ public class ClimateCompensationService {
         return configMapper.insert(config) > 0;
     }
 
+    /**
+     * 更新气候补偿配置
+     * 如果配置激活，则先清除该热力站的其他激活配置
+     * @param config 配置信息
+     * @return 是否成功
+     */
     @Transactional
     public boolean updateConfig(ClimateCompensationConfig config) {
         if (config.getIsActive() != null && config.getIsActive() == 1) {
@@ -61,6 +96,10 @@ public class ClimateCompensationService {
         return configMapper.updateById(config) > 0;
     }
 
+    /**
+     * 清除热力站的所有激活配置
+     * @param stationId 热力站ID
+     */
     private void clearActiveConfigs(Long stationId) {
         LambdaQueryWrapper<ClimateCompensationConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClimateCompensationConfig::getStationId, stationId)
@@ -72,10 +111,20 @@ public class ClimateCompensationService {
         }
     }
 
+    /**
+     * 删除气候补偿配置
+     * @param id 配置ID
+     * @return 是否成功
+     */
     public boolean deleteConfig(Long id) {
         return configMapper.deleteById(id) > 0;
     }
 
+    /**
+     * 获取配置下的所有曲线点
+     * @param configId 配置ID
+     * @return 曲线点列表
+     */
     public List<ClimateCompensationCurve> getCurvesByConfigId(Long configId) {
         LambdaQueryWrapper<ClimateCompensationCurve> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClimateCompensationCurve::getConfigId, configId)
@@ -83,6 +132,13 @@ public class ClimateCompensationService {
         return curveMapper.selectList(wrapper);
     }
 
+    /**
+     * 保存补偿曲线
+     * 先删除原有曲线，再保存新曲线
+     * @param configId 配置ID
+     * @param curves 曲线点列表
+     * @return 是否成功
+     */
     @Transactional
     public boolean saveCurves(Long configId, List<ClimateCompensationCurve> curves) {
         LambdaQueryWrapper<ClimateCompensationCurve> wrapper = new LambdaQueryWrapper<>();
@@ -98,6 +154,13 @@ public class ClimateCompensationService {
         return true;
     }
 
+    /**
+     * 查询气候补偿效果列表
+     * @param stationId 热力站ID
+     * @param dataType 数据类型
+     * @param days 查询天数
+     * @return 效果列表
+     */
     public List<ClimateCompensationEffect> listEffects(Long stationId, String dataType, Integer days) {
         LambdaQueryWrapper<ClimateCompensationEffect> wrapper = new LambdaQueryWrapper<>();
         if (stationId != null) {
@@ -113,6 +176,12 @@ public class ClimateCompensationService {
         return effectMapper.selectList(wrapper);
     }
 
+    /**
+     * 计算节能率
+     * 根据最近30天的数据计算平均节能率
+     * @param stationId 热力站ID
+     * @return 节能率百分比
+     */
     public BigDecimal calculateSavingsRate(Long stationId) {
         LambdaQueryWrapper<ClimateCompensationEffect> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClimateCompensationEffect::getStationId, stationId)
@@ -145,6 +214,11 @@ public class ClimateCompensationService {
                 .divide(totalBefore, 2, BigDecimal.ROUND_HALF_UP);
     }
 
+    /**
+     * 获取当前室外温度
+     * @param stationId 热力站ID
+     * @return 配置对象（包含室外温度）
+     */
     public ClimateCompensationConfig getCurrentOutdoorTemp(Long stationId) {
         LambdaQueryWrapper<ClimateCompensationEffect> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClimateCompensationEffect::getStationId, stationId)
@@ -160,7 +234,12 @@ public class ClimateCompensationService {
         return null;
     }
 
-    public Object getStatistics(Long stationId) {
+    /**
+     * 获取气候补偿统计信息
+     * @param stationId 热力站ID
+     * @return 统计信息Map
+     */
+    public Map<String, Object> getStatistics(Long stationId) {
         ClimateCompensationConfig activeConfig = getActiveConfig(stationId);
         ClimateCompensationEffect latestEffect = null;
         
@@ -172,7 +251,7 @@ public class ClimateCompensationService {
 
         BigDecimal savingsRate = calculateSavingsRate(stationId);
 
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         result.put("currentMode", activeConfig != null ? activeConfig.getConfigName() : "未配置");
         result.put("outdoorTemp", latestEffect != null ? latestEffect.getOutdoorTemp() : new BigDecimal("-5.0"));
         result.put("supplyTemp", latestEffect != null ? latestEffect.getActualSupplyTemp() : new BigDecimal("52.0"));
