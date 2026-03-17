@@ -177,6 +177,10 @@ const handleDelete = (row) => {
  * 保存建筑物信息
  */
 const handleSave = async () => {
+  if (!buildingForm.buildingCode || !buildingForm.buildingName) {
+    ElMessage.warning('请填写建筑编码和建筑名称')
+    return
+  }
   try {
     if (editingId.value) {
       await buildingApi.updateBuilding(editingId.value, buildingForm)
@@ -190,7 +194,12 @@ const handleSave = async () => {
     resetForm()
     await loadBuildings()
   } catch (error) {
-    ElMessage.error('操作失败')
+    console.error('操作失败:', error)
+    if (error.response?.data?.error) {
+      ElMessage.error('操作失败: ' + error.response.data.error)
+    } else {
+      ElMessage.error('操作失败')
+    }
   }
 }
 
