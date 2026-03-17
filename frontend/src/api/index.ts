@@ -5,8 +5,8 @@
 
 import axios from 'axios'
 
-// 配置后端API地址
-const API_BASE_URL = 'http://localhost:8080'
+// 配置后端API地址（使用相对路径，经过Vite代理）
+const API_BASE_URL = ''
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
