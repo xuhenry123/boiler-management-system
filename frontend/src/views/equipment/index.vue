@@ -75,7 +75,9 @@
                   <el-option label="停运" value="0" />
                   <el-option label="维修" value="2" />
                 </el-select>
-                <el-button type="primary" size="small">新增设备</el-button>
+                <el-button type="primary" size="small" @click="handleAdd">
+                  <el-icon><Plus /></el-icon>新增设备
+                </el-button>
               </div>
             </div>
           </template>
@@ -103,9 +105,9 @@
             <el-table-column prop="runtime" label="运行时长(h)" width="100" />
             <el-table-column label="操作" width="180">
               <template #default="{ row }">
-                <el-button type="primary" link size="small">监控</el-button>
-                <el-button type="primary" link size="small">维护</el-button>
-                <el-button type="danger" link size="small">详情</el-button>
+                <el-button type="primary" link size="small" @click="handleMonitor(row)">监控</el-button>
+                <el-button type="primary" link size="small" @click="handleMaintain(row)">维护</el-button>
+                <el-button type="primary" link size="small" @click="handleViewDetail(row)">详情</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -143,8 +145,8 @@
               </template>
             </el-table-column>
             <el-table-column label="操作" width="80">
-              <template #default>
-                <el-button type="primary" link size="small">处理</el-button>
+              <template #default="{ row }">
+                <el-button type="primary" link size="small" @click="handleMaintainReminder(row)">处理</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -155,15 +157,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Cpu, CircleCheck, Tools, Warning } from '@element-plus/icons-vue'
+import { ref, onMounted, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Cpu, CircleCheck, Tools, Warning, Plus } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
+// 图表DOM引用
 const typeChartRef = ref(null)
 
+// 筛选条件
 const equipmentType = ref('')
 const equipmentStatus = ref('')
 
+// 统计数据
 const stats = ref({
   totalCount: 156,
   runningCount: 142,
@@ -171,33 +177,98 @@ const stats = ref({
   faultCount: 6
 })
 
+// 设备列表数据
 const equipmentList = ref([
-  { code: 'BLR-001', name: '1号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 92, runtime: 2150 },
-  { code: 'BLR-002', name: '2号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 88, runtime: 1980 },
-  { code: 'PUMP-001', name: '1号循环泵', type: 'pump', station: '换热站1', status: 1, efficiency: 85, runtime: 3200 },
-  { code: 'HE-001', name: '1号板式换热器', type: 'heat_exchanger', station: '换热站1', status: 1, efficiency: 95, runtime: 2800 },
-  { code: 'VALVE-001', name: '1号楼调节阀', type: 'valve', station: '换热站1', status: 1, efficiency: 100, runtime: 4500 },
-  { code: 'BLR-003', name: '3号燃煤锅炉', type: 'boiler', station: '换热站2', status: 2, efficiency: 75, runtime: 1500 }
+  { id: 1, code: 'BLR-001', name: '1号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 92, runtime: 2150 },
+  { id: 2, code: 'BLR-002', name: '2号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 88, runtime: 1980 },
+  { id: 3, code: 'PUMP-001', name: '1号循环泵', type: 'pump', station: '换热站1', status: 1, efficiency: 85, runtime: 3200 },
+  { id: 4, code: 'HE-001', name: '1号板式换热器', type: 'heat_exchanger', station: '换热站1', status: 1, efficiency: 95, runtime: 2800 },
+  { id: 5, code: 'VALVE-001', name: '1号楼调节阀', type: 'valve', station: '换热站1', status: 1, efficiency: 100, runtime: 4500 },
+  { id: 6, code: 'BLR-003', name: '3号燃煤锅炉', type: 'boiler', station: '换热站2', status: 2, efficiency: 75, runtime: 1500 }
 ])
 
+// 维护提醒列表
 const maintenanceReminders = ref([
-  { equipment: '1号循环泵', maintainType: '定期保养', dueDate: '2026-03-20', daysLeft: 5 },
-  { equipment: '2号燃气锅炉', maintainType: '年度检修', dueDate: '2026-03-25', daysLeft: 10 },
-  { equipment: '1号板式换热器', maintainType: '清洗维护', dueDate: '2026-03-18', daysLeft: 3 }
+  { id: 1, equipment: '1号循环泵', maintainType: '定期保养', dueDate: '2026-03-20', daysLeft: 5 },
+  { id: 2, equipment: '2号燃气锅炉', maintainType: '年度检修', dueDate: '2026-03-25', daysLeft: 10 },
+  { id: 3, equipment: '1号板式换热器', maintainType: '清洗维护', dueDate: '2026-03-18', daysLeft: 3 }
 ])
 
+// 过滤后的设备列表
+const filteredEquipment = computed(() => {
+  return equipmentList.value.filter(item => {
+    const typeMatch = !equipmentType.value || item.type === equipmentType.value
+    const statusMatch = !equipmentStatus.value || item.status === parseInt(equipmentStatus.value)
+    return typeMatch && statusMatch
+  })
+})
+
+/**
+ * 获取设备类型的中文名称
+ * @param type 设备类型
+ * @returns 中文名称
+ */
 const getTypeName = (type) => {
   const map = { boiler: '锅炉', pump: '循环泵', heat_exchanger: '换热器', valve: '调节阀' }
   return map[type] || type
 }
 
+/**
+ * 新增设备
+ */
+const handleAdd = () => {
+  ElMessage.info('打开新增设备对话框')
+}
+
+/**
+ * 监控设备
+ * @param row 设备数据行
+ */
+const handleMonitor = (row) => {
+  ElMessage.info(`监控设备: ${row.name}`)
+}
+
+/**
+ * 设备维护
+ * @param row 设备数据行
+ */
+const handleMaintain = (row) => {
+  ElMessage.info(`设备维护: ${row.name}`)
+}
+
+/**
+ * 查看设备详情
+ * @param row 设备数据行
+ */
+const handleViewDetail = (row) => {
+  ElMessage.info(`查看设备详情: ${row.name}`)
+}
+
+/**
+ * 处理维护提醒
+ * @param row 维护提醒数据行
+ */
+const handleMaintainReminder = (row) => {
+  ElMessageBox.confirm(`确定处理"${row.equipment}"的维护提醒吗？`, '提示', { type: 'info' }).then(() => {
+    maintenanceReminders.value = maintenanceReminders.value.filter(r => r.id !== row.id)
+    ElMessage.success('已处理维护提醒')
+  })
+}
+
+/**
+ * 初始化设备类型分布图表
+ */
 const initTypeChart = () => {
+  if (!typeChartRef.value) return
   const chart = echarts.init(typeChartRef.value)
   const option = {
+    title: { text: '设备类型分布', left: 'center' },
     tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
     series: [{
       type: 'pie',
       radius: ['40%', '70%'],
+      center: ['50%', '45%'],
       data: [
         { value: 12, name: '锅炉' },
         { value: 28, name: '循环泵' },
@@ -209,6 +280,7 @@ const initTypeChart = () => {
   chart.setOption(option)
 }
 
+// 组件挂载完成后初始化图表
 onMounted(() => {
   initTypeChart()
 })

@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>热源智能调控系统</span>
-          <el-button type="primary" @click="showAddDialog = true">调度优化</el-button>
+          <el-button type="primary" @click="handleOptimize">调度优化</el-button>
         </div>
       </template>
       
@@ -91,25 +91,38 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import * as echarts from 'echarts'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
+// 图表DOM引用
 const loadPredictChartRef = ref(null)
 const efficiencyChartRef = ref(null)
 
+// 控制对话框显示
 const showAddDialog = ref(false)
 
+// 锅炉列表数据
 const boilers = ref([
   { id: 1, name: '1号燃气锅炉', status: 'running', loadRate: 85, supplyTemp: 120, returnTemp: 70, efficiency: 0.95 },
   { id: 2, name: '2号燃气锅炉', status: 'running', loadRate: 72, supplyTemp: 118, returnTemp: 68, efficiency: 0.93 },
   { id: 3, name: '3号燃气锅炉', status: 'stopped', loadRate: 0, supplyTemp: 0, returnTemp: 0, efficiency: 0 }
 ])
 
+/**
+ * 获取负荷率进度条颜色
+ * @param rate 负荷率
+ * @returns 颜色值
+ */
 const getProgressColor = (rate) => {
   if (rate >= 80) return '#f56c6c'
   if (rate >= 60) return '#e6a23c'
   return '#67c23a'
 }
 
+/**
+ * 调整锅炉负荷
+ * @param boiler 锅炉对象
+ * @param type 调整类型：up增加负荷，down减少负荷
+ */
 const adjustBoiler = (boiler, type) => {
   if (type === 'up' && boiler.loadRate < 95) {
     boiler.loadRate += 5
@@ -119,7 +132,20 @@ const adjustBoiler = (boiler, type) => {
   ElMessage.success(`${boiler.name}负荷已调整至${boiler.loadRate}%`)
 }
 
+/**
+ * 调度优化按钮点击事件
+ */
+const handleOptimize = () => {
+  ElMessageBox.confirm('是否执行调度优化？', '提示', { type: 'info' }).then(() => {
+    ElMessage.success('调度优化已完成')
+  }).catch(() => {})
+}
+
+/**
+ * 初始化热负荷预测曲线图表
+ */
 const initLoadPredictChart = () => {
+  if (!loadPredictChartRef.value) return
   const chart = echarts.init(loadPredictChartRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -135,7 +161,11 @@ const initLoadPredictChart = () => {
   chart.setOption(option)
 }
 
+/**
+ * 初始化锅炉效率对比图表
+ */
 const initEfficiencyChart = () => {
+  if (!efficiencyChartRef.value) return
   const chart = echarts.init(efficiencyChartRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -155,6 +185,9 @@ const initEfficiencyChart = () => {
   chart.setOption(option)
 }
 
+/**
+ * 训练模型按钮点击事件
+ */
 const trainModel = () => {
   ElMessage.info('模型训练中，请稍候...')
   setTimeout(() => {
@@ -162,6 +195,7 @@ const trainModel = () => {
   }, 2000)
 }
 
+// 组件挂载完成后初始化图表
 onMounted(() => {
   initLoadPredictChart()
   initEfficiencyChart()

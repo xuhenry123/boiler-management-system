@@ -92,26 +92,60 @@
         </el-col>
       </el-row>
     </el-card>
+
+    <!-- PID配置对话框 -->
+    <el-dialog v-model="showPIDDialog" title="PID控制参数配置" width="500px">
+      <el-form :model="pidConfig" label-width="100px">
+        <el-form-item label="设定温度">
+          <el-input-number v-model="pidConfig.setpoint" :min="30" :max="80" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="Kp">
+          <el-input-number v-model="pidConfig.kp" :step="0.1" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="Ki">
+          <el-input-number v-model="pidConfig.ki" :step="0.01" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="Kd">
+          <el-input-number v-model="pidConfig.kd" :step="0.01" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="控制模式">
+          <el-radio-group v-model="pidConfig.mode">
+            <el-radio label="auto">自动</el-radio>
+            <el-radio label="manual">手动</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPIDDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleSavePID">保存配置</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
 
+// 图表DOM引用
 const processChartRef = ref(null)
 const pidChartRef = ref(null)
 const historyChartRef = ref(null)
 
+// 选中的换热站
 const selectedStation = ref(1)
+// 控制PID配置对话框显示
 const showPIDDialog = ref(false)
 
+// 换热站列表数据
 const stations = ref([
   { id: 1, name: '东城区换热站' },
   { id: 2, name: '西城区换热站' },
   { id: 3, name: '朝阳区换热站' }
 ])
 
+// 换热站运行数据
 const stationData = reactive({
   primarySupplyTemp: 118.5,
   primaryReturnTemp: 68.2,
@@ -122,6 +156,7 @@ const stationData = reactive({
   pumpSpeed: 0.75
 })
 
+// PID控制参数配置
 const pidConfig = reactive({
   setpoint: 50,
   kp: 1.2,
@@ -130,7 +165,19 @@ const pidConfig = reactive({
   mode: 'auto'
 })
 
+/**
+ * 保存PID配置
+ */
+const handleSavePID = () => {
+  ElMessage.success('PID参数已保存')
+  showPIDDialog.value = false
+}
+
+/**
+ * 初始化实时工艺图图表
+ */
 const initProcessChart = () => {
+  if (!processChartRef.value) return
   const chart = echarts.init(processChartRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -147,7 +194,11 @@ const initProcessChart = () => {
   chart.setOption(option)
 }
 
+/**
+ * 初始化PID调节曲线图表
+ */
 const initPIDChart = () => {
+  if (!pidChartRef.value) return
   const chart = echarts.init(pidChartRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -162,7 +213,11 @@ const initPIDChart = () => {
   chart.setOption(option)
 }
 
+/**
+ * 初始化历史曲线图表
+ */
 const initHistoryChart = () => {
+  if (!historyChartRef.value) return
   const chart = echarts.init(historyChartRef.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -179,6 +234,12 @@ const initHistoryChart = () => {
   chart.setOption(option)
 }
 
+// 监听选中的换热站变化，重新加载数据
+watch(selectedStation, (newVal) => {
+  ElMessage.info(`已切换到${stations.value.find(s => s.id === newVal)?.name}`)
+})
+
+// 组件挂载完成后初始化图表
 onMounted(() => {
   initProcessChart()
   initPIDChart()
