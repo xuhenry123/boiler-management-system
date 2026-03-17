@@ -75,9 +75,10 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { stationApi } from '@/api'
 
 const router = useRouter()
 
@@ -90,14 +91,10 @@ const currentPage = ref(1)
 // 每页条数
 const pageSize = ref(10)
 // 总记录数
-const total = ref(3)
+const total = ref(0)
 
 // 换热站列表数据
-const stations = ref([
-  { id: 1, stationCode: 'HS001', stationName: '东城区换热站', address: '北京市东城区', designCapacity: 50, designFlow: 800, status: 1 },
-  { id: 2, stationCode: 'HS002', stationName: '西城区换热站', address: '北京市西城区', designCapacity: 40, designFlow: 650, status: 1 },
-  { id: 3, stationCode: 'HS003', stationName: '朝阳区换热站', address: '北京市朝阳区', designCapacity: 60, designFlow: 1000, status: 1 }
-])
+const stations = ref([])
 
 // 换热站表单数据
 const stationForm = reactive({
@@ -109,6 +106,19 @@ const stationForm = reactive({
   designFlow: 0,
   status: 1
 })
+
+/**
+ * 加载换热站列表数据
+ */
+const loadStations = async () => {
+  try {
+    const result = await stationApi.getStations()
+    stations.value = result.data || []
+    total.value = result.total || 0
+  } catch (error) {
+    console.error('加载换热站数据失败:', error)
+  }
+}
 
 /**
  * 新增换热站
@@ -142,9 +152,9 @@ const handleMonitor = (row) => {
  * @param row 换热站数据行
  */
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定删除换热站"${row.stationName}"吗？`, '提示', { type: 'warning' }).then(() => {
-    stations.value = stations.value.filter(s => s.id !== row.id)
-    total.value--
+  ElMessageBox.confirm(`确定删除换热站"${row.stationName}"吗？`, '提示', { type: 'warning' }).then(async () => {
+    await stationApi.deleteStation(row.id)
+    await loadStations()
     ElMessage.success('删除成功')
   })
 }
@@ -152,22 +162,22 @@ const handleDelete = (row) => {
 /**
  * 保存换热站信息
  */
-const handleSave = () => {
-  if (editingId.value) {
-    const index = stations.value.findIndex(s => s.id === editingId.value)
-    if (index !== -1) {
-      stations.value[index] = { ...stationForm }
+const handleSave = async () => {
+  try {
+    if (editingId.value) {
+      await stationApi.updateStation(editingId.value, stationForm)
+      ElMessage.success('保存成功')
+    } else {
+      await stationApi.createStation(stationForm)
+      ElMessage.success('新增成功')
     }
-    ElMessage.success('保存成功')
-  } else {
-    stationForm.id = Date.now()
-    stations.value.push({ ...stationForm })
-    total.value++
-    ElMessage.success('新增成功')
+    showDialog.value = false
+    editingId.value = null
+    resetForm()
+    await loadStations()
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
-  showDialog.value = false
-  editingId.value = null
-  resetForm()
 }
 
 /**
@@ -182,6 +192,11 @@ const resetForm = () => {
   stationForm.designFlow = 0
   stationForm.status = 1
 }
+
+// 组件挂载完成后加载数据
+onMounted(() => {
+  loadStations()
+})
 </script>
 
 <style scoped>

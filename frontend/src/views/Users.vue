@@ -80,8 +80,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { heatUserApi } from '@/api'
 
 // 控制新增/编辑对话框显示
 const showAddDialog = ref(false)
@@ -92,15 +93,10 @@ const currentPage = ref(1)
 // 每页条数
 const pageSize = ref(10)
 // 总记录数
-const total = ref(4)
+const total = ref(0)
 
 // 热用户列表数据
-const users = ref([
-  { id: 1, userCode: 'U001', userName: '张三', buildingName: '阳光花园1号楼', unitNo: '1', roomNo: '101', area: 120, targetTemp: 20, status: 1 },
-  { id: 2, userCode: 'U002', userName: '李四', buildingName: '阳光花园1号楼', unitNo: '1', roomNo: '102', area: 120, targetTemp: 21, status: 1 },
-  { id: 3, userCode: 'U003', userName: '王五', buildingName: '阳光花园1号楼', unitNo: '1', roomNo: '201', area: 130, targetTemp: 20, status: 1 },
-  { id: 4, userCode: 'U004', userName: '赵六', buildingName: '阳光花园2号楼', unitNo: '2', roomNo: '301', area: 140, targetTemp: 22, status: 1 }
-])
+const users = ref([])
 
 // 用户表单数据
 const userForm = reactive({
@@ -114,6 +110,19 @@ const userForm = reactive({
   targetTemp: 20,
   status: 1
 })
+
+/**
+ * 加载用户列表数据
+ */
+const loadUsers = async () => {
+  try {
+    const result = await heatUserApi.getUsers()
+    users.value = result.data || []
+    total.value = result.total || 0
+  } catch (error) {
+    console.error('加载用户数据失败:', error)
+  }
+}
 
 /**
  * 编辑用户信息
@@ -130,8 +139,9 @@ const handleEdit = (row) => {
  * @param row 用户数据行
  */
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定删除热用户"${row.userName}"吗？`, '提示', { type: 'warning' }).then(() => {
-    users.value = users.value.filter(u => u.id !== row.id)
+  ElMessageBox.confirm(`确定删除热用户"${row.userName}"吗？`, '提示', { type: 'warning' }).then(async () => {
+    await heatUserApi.deleteUser(row.id)
+    await loadUsers()
     ElMessage.success('删除成功')
   })
 }
@@ -139,21 +149,22 @@ const handleDelete = (row) => {
 /**
  * 保存用户信息
  */
-const handleSave = () => {
-  if (editingId.value) {
-    const index = users.value.findIndex(u => u.id === editingId.value)
-    if (index !== -1) {
-      users.value[index] = { ...userForm }
+const handleSave = async () => {
+  try {
+    if (editingId.value) {
+      await heatUserApi.updateUser(editingId.value, userForm)
+      ElMessage.success('保存成功')
+    } else {
+      await heatUserApi.createUser(userForm)
+      ElMessage.success('新增成功')
     }
-    ElMessage.success('保存成功')
-  } else {
-    userForm.id = Date.now()
-    users.value.push({ ...userForm })
-    ElMessage.success('新增成功')
+    showAddDialog.value = false
+    editingId.value = null
+    resetForm()
+    await loadUsers()
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
-  showAddDialog.value = false
-  editingId.value = null
-  resetForm()
 }
 
 /**
@@ -170,6 +181,11 @@ const resetForm = () => {
   userForm.targetTemp = 20
   userForm.status = 1
 }
+
+// 组件挂载完成后加载数据
+onMounted(() => {
+  loadUsers()
+})
 </script>
 
 <style scoped>

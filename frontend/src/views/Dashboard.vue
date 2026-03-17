@@ -127,6 +127,7 @@ import { ref, onMounted, reactive, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { OfficeBuilding, House, User, Warning, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { dashboardApi } from '@/api'
 
 // 图表DOM引用
 const tempChartRef = ref(null)
@@ -161,18 +162,27 @@ const getAlarmLevelType = (level) => {
 
 /**
  * 加载仪表盘数据
- * 从模拟API获取统计数据和告警信息
+ * 从数据存储获取统计数据和告警信息
  */
-const loadData = () => {
-  // 从模拟API获取数据
-  if (window.MockAPI) {
-    const dashboardStats = window.MockAPI.getDashboardStats()
-    stats.stationCount = dashboardStats.stationCount
-    stats.buildingCount = dashboardStats.buildingCount
-    stats.userCount = dashboardStats.userCount
-    stats.alarmCount = dashboardStats.alarmCount
+const loadData = async () => {
+  try {
+    // 获取统计数据
+    const statsData = await dashboardApi.getStats()
+    stats.stationCount = statsData.stationCount
+    stats.buildingCount = statsData.buildingCount
+    stats.userCount = statsData.userCount
+    stats.alarmCount = statsData.alarmCount
     
-    alarms.value = window.MockAPI.getAlarms().slice(0, 8)
+    // 获取告警列表
+    const alarmsData = await dashboardApi.getAlarms()
+    alarms.value = alarmsData.slice(0, 8)
+  } catch (error) {
+    console.error('加载数据失败:', error)
+    // 使用备用数据
+    stats.stationCount = 3
+    stats.buildingCount = 5
+    stats.userCount = 50
+    stats.alarmCount = 3
   }
 }
 
@@ -180,7 +190,7 @@ const loadData = () => {
  * 初始化ECharts图表
  * 包括温度趋势图、换热站状态饼图、热负荷柱状图
  */
-const initCharts = () => {
+const initCharts = async () => {
   if (!tempChartRef.value || !stationChartRef.value || !loadChartRef.value) return
   
   // 销毁已存在的图表实例
@@ -193,10 +203,10 @@ const initCharts = () => {
   let tempData = { primarySupply: [], primaryReturn: [], secondarySupply: [], secondaryReturn: [] }
   let hours = []
   
-  if (window.MockAPI) {
-    tempData = window.MockAPI.getTemperatureTrend()
+  try {
+    tempData = await dashboardApi.getTemperatureTrend()
     hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
-  } else {
+  } catch (error) {
     hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
     tempData = {
       primarySupply: [118, 120, 122, 121, 119, 120],
@@ -228,9 +238,9 @@ const initCharts = () => {
   // 换热站状态饼图
   stationChart = echarts.init(stationChartRef.value)
   let stationData = []
-  if (window.MockAPI) {
-    stationData = window.MockAPI.getStationStatus()
-  } else {
+  try {
+    stationData = await dashboardApi.getStationStatus()
+  } catch (error) {
     stationData = [
       { value: 20, name: '运行中', itemStyle: { color: '#67c23a' } },
       { value: 3, name: '停止', itemStyle: { color: '#909399' } },
@@ -253,9 +263,9 @@ const initCharts = () => {
   // 热负荷柱状图
   loadChart = echarts.init(loadChartRef.value)
   let loadData = []
-  if (window.MockAPI) {
-    loadData = window.MockAPI.getHeatLoad()
-  } else {
+  try {
+    loadData = await dashboardApi.getHeatLoad()
+  } catch (error) {
     loadData = [45, 42, 55, 60, 58, 52]
   }
   

@@ -80,8 +80,9 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { alarmApi } from '@/api'
 
 // 当前告警级别筛选
 const alarmLevel = ref('all')
@@ -90,16 +91,12 @@ const currentPage = ref(1)
 // 每页条数
 const pageSize = ref(10)
 // 总记录数
-const total = ref(3)
+const total = ref(0)
 // 控制处理对话框显示
 const showProcessDialog = ref(false)
 
 // 告警列表数据
-const alarms = ref([
-  { id: 1, alarmType: 'low_temp', alarmMessage: '1号楼101室温度过低', alarmLevel: 'critical', alarmLevelText: '严重', buildingName: '阳光花园1号楼', alarmValue: 16.5, thresholdValue: 18, createTime: '2026-03-14 10:30:00', acknowledged: false },
-  { id: 2, alarmType: 'valve_fail', alarmMessage: '2号阀门通讯中断', alarmLevel: 'warning', alarmLevelText: '警告', buildingName: '阳光花园2号楼', alarmValue: 0, thresholdValue: 1, createTime: '2026-03-14 10:25:00', acknowledged: true },
-  { id: 3, alarmType: 'high_temp', alarmMessage: '3号楼501室温度过高', alarmLevel: 'info', alarmLevelText: '提示', buildingName: '商业大厦A座', alarmValue: 25, thresholdValue: 24, createTime: '2026-03-14 09:15:00', acknowledged: false }
-])
+const alarms = ref([])
 
 // 处理表单数据
 const processForm = reactive({
@@ -109,12 +106,22 @@ const processForm = reactive({
   remark: ''
 })
 
+/**
+ * 加载告警列表数据
+ */
+const loadAlarms = async () => {
+  try {
+    const result = await alarmApi.getAlarms({ level: alarmLevel.value })
+    alarms.value = result.data || []
+    total.value = result.total || 0
+  } catch (error) {
+    console.error('加载告警数据失败:', error)
+  }
+}
+
 // 过滤后的告警列表
 const filteredAlarms = computed(() => {
-  if (alarmLevel.value === 'all') {
-    return alarms.value
-  }
-  return alarms.value.filter(alarm => alarm.alarmLevel === alarmLevel.value)
+  return alarms.value
 })
 
 /**
@@ -123,7 +130,7 @@ const filteredAlarms = computed(() => {
  * @returns 中文名称
  */
 const getTypeName = (type) => {
-  const map = { low_temp: '低温告警', valve_fail: '故障告警', high_temp: '高温告警' }
+  const map = { low_temp: '低温告警', valve_fail: '故障告警', high_temp: '高温告警', pressure: '压力告警', flow: '流量告警' }
   return map[type] || type
 }
 
@@ -141,7 +148,8 @@ const getLevelType = (level) => {
  * 告警级别筛选变化
  * @param value 选中的级别
  */
-const handleLevelChange = (value) => {
+const handleLevelChange = async (value) => {
+  await loadAlarms()
   ElMessage.info(`已筛选${value === 'all' ? '全部' : value}级别告警`)
 }
 
@@ -149,7 +157,8 @@ const handleLevelChange = (value) => {
  * 确认告警
  * @param row 告警数据行
  */
-const handleAcknowledge = (row) => {
+const handleAcknowledge = async (row) => {
+  await alarmApi.acknowledgeAlarm(row.id)
   row.acknowledged = true
   ElMessage.success('告警已确认')
 }
@@ -169,7 +178,8 @@ const handleProcess = (row) => {
 /**
  * 提交告警处理
  */
-const submitProcess = () => {
+const submitProcess = async () => {
+  await alarmApi.processAlarm(processForm.id, processForm.handleType, processForm.remark)
   const alarm = alarms.value.find(a => a.id === processForm.id)
   if (alarm) {
     alarm.acknowledged = true
@@ -177,6 +187,11 @@ const submitProcess = () => {
   showProcessDialog.value = false
   ElMessage.success('告警已处理')
 }
+
+// 组件挂载完成后加载数据
+onMounted(() => {
+  loadAlarms()
+})
 </script>
 
 <style scoped>

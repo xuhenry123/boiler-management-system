@@ -81,8 +81,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { buildingApi } from '@/api'
 
 // 控制对话框显示
 const showDialog = ref(false)
@@ -93,14 +94,10 @@ const currentPage = ref(1)
 // 每页条数
 const pageSize = ref(10)
 // 总记录数
-const total = ref(3)
+const total = ref(0)
 
 // 建筑物列表数据
-const buildings = ref([
-  { id: 1, buildingCode: 'BLD001', buildingName: '阳光花园1号楼', address: '东城区阳光路1号', areaHeated: 12000, buildingType: 'residential', heatTransferCoefficient: 1.2, status: 1 },
-  { id: 2, buildingCode: 'BLD002', buildingName: '阳光花园2号楼', address: '东城区阳光路2号', areaHeated: 15000, buildingType: 'residential', heatTransferCoefficient: 1.15, status: 1 },
-  { id: 3, buildingCode: 'BLD003', buildingName: '商业大厦A座', address: '西城区金融街8号', areaHeated: 20000, buildingType: 'commercial', heatTransferCoefficient: 0.9, status: 1 }
-])
+const buildings = ref([])
 
 // 建筑物表单数据
 const buildingForm = reactive({
@@ -120,8 +117,21 @@ const buildingForm = reactive({
  * @returns 中文名称
  */
 const getTypeName = (type) => {
-  const map = { residential: '住宅', commercial: '商业', industrial: '工业' }
+  const map = { residential: '住宅', commercial: '商业', industrial: '工业', public: '公共建筑' }
   return map[type] || type
+}
+
+/**
+ * 加载建筑物列表数据
+ */
+const loadBuildings = async () => {
+  try {
+    const result = await buildingApi.getBuildings()
+    buildings.value = result.data || []
+    total.value = result.total || 0
+  } catch (error) {
+    console.error('加载建筑物数据失败:', error)
+  }
 }
 
 /**
@@ -156,9 +166,9 @@ const handleView = (row) => {
  * @param row 建筑物数据行
  */
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定删除建筑物"${row.buildingName}"吗？`, '提示', { type: 'warning' }).then(() => {
-    buildings.value = buildings.value.filter(b => b.id !== row.id)
-    total.value--
+  ElMessageBox.confirm(`确定删除建筑物"${row.buildingName}"吗？`, '提示', { type: 'warning' }).then(async () => {
+    await buildingApi.deleteBuilding(row.id)
+    await loadBuildings()
     ElMessage.success('删除成功')
   })
 }
@@ -166,22 +176,22 @@ const handleDelete = (row) => {
 /**
  * 保存建筑物信息
  */
-const handleSave = () => {
-  if (editingId.value) {
-    const index = buildings.value.findIndex(b => b.id === editingId.value)
-    if (index !== -1) {
-      buildings.value[index] = { ...buildingForm }
+const handleSave = async () => {
+  try {
+    if (editingId.value) {
+      await buildingApi.updateBuilding(editingId.value, buildingForm)
+      ElMessage.success('保存成功')
+    } else {
+      await buildingApi.createBuilding(buildingForm)
+      ElMessage.success('新增成功')
     }
-    ElMessage.success('保存成功')
-  } else {
-    buildingForm.id = Date.now()
-    buildings.value.push({ ...buildingForm })
-    total.value++
-    ElMessage.success('新增成功')
+    showDialog.value = false
+    editingId.value = null
+    resetForm()
+    await loadBuildings()
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
-  showDialog.value = false
-  editingId.value = null
-  resetForm()
 }
 
 /**
@@ -197,6 +207,11 @@ const resetForm = () => {
   buildingForm.heatTransferCoefficient = 1.0
   buildingForm.status = 1
 }
+
+// 组件挂载完成后加载数据
+onMounted(() => {
+  loadBuildings()
+})
 </script>
 
 <style scoped>
