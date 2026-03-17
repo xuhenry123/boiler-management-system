@@ -1,0 +1,8 @@
+{"code":"BLR-001","name":"1号燃气锅炉","type":"boiler","station":"东城区换热站","status":1,"efficiency":92,"runtime":2150,"_id":"SiDuczZnXnjmPxSH"}
+{"code":"BLR-002","name":"2号燃气锅炉","type":"boiler","station":"东城区换热站","status":1,"efficiency":88,"runtime":1980,"_id":"00gAtze8ff1bdTPu"}
+{"code":"PUMP-001","name":"1号循环泵","type":"pump","station":"东城区换热站","status":1,"efficiency":85,"runtime":3200,"_id":"R9ZIEiqCQjd7pqTh"}
+{"code":"HE-001","name":"1号板式换热器","type":"heat_exchanger","station":"东城区换热站","status":1,"efficiency":95,"runtime":2800,"_id":"uKGg0Wsm5CE8TiCw"}
+{"code":"VALVE-001","name":"1号楼调节阀","type":"valve","station":"东城区换热站","status":1,"efficiency":100,"runtime":4500,"_id":"8dPitEMZzL4p63s3"}
+{"code":"BLR-003","name":"3号燃煤锅炉","type":"boiler","station":"西城区换热站","status":2,"efficiency":75,"runtime":1500,"_id":"R4AJTQ7SiNKwVinT"}
+{"code":"PUMP-002","name":"2号循环泵","type":"pump","station":"西城区换热站","status":1,"efficiency":82,"runtime":2100,"_id":"KorLvR0C3sbDiOWn"}
+{"code":"HE-002","name":"2号板式换热器","type":"heat_exchanger","station":"西城区换热站","status":1,"efficiency":93,"runtime":1900,"_id":"pcEwTVOBE9RwYACb"}

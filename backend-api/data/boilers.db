@@ -1,0 +1,3 @@
+{"name":"1号燃气锅炉","status":"running","loadRate":85,"supplyTemp":120,"returnTemp":70,"efficiency":0.95,"_id":"vLS9bflu5sFVRmno"}
+{"name":"2号燃气锅炉","status":"running","loadRate":72,"supplyTemp":118,"returnTemp":68,"efficiency":0.93,"_id":"EIz9x0DV6iyLDC4q"}
+{"name":"3号燃气锅炉","status":"stopped","loadRate":0,"supplyTemp":0,"returnTemp":0,"efficiency":0,"_id":"OlkF7Bm3bTOk0ZGF"}
