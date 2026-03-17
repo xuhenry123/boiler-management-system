@@ -118,18 +118,27 @@
 </template>
 
 <script setup>
+/**
+ * 仪表盘视图组件
+ * 展示系统的整体运行状态，包括换热站数量、建筑物数量、热用户数量、告警数量等统计信息
+ * 以及温度趋势图、换热站状态图、热负荷曲线等可视化图表
+ */
 import { ref, onMounted, reactive, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { OfficeBuilding, House, User, Warning, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+// 图表DOM引用
 const tempChartRef = ref(null)
 const stationChartRef = ref(null)
 const loadChartRef = ref(null)
+
+// ECharts图表实例
 let tempChart = null
 let stationChart = null
 let loadChart = null
 
+// 统计数据对象
 const stats = reactive({
   stationCount: 0,
   buildingCount: 0,
@@ -137,13 +146,23 @@ const stats = reactive({
   alarmCount: 0
 })
 
+// 告警列表数据
 const alarms = ref([])
 
+/**
+ * 获取告警级别的类型映射
+ * @param level 告警级别
+ * @return 对应的Element Plus标签类型
+ */
 const getAlarmLevelType = (level) => {
   const map = { Info: 'info', Warning: 'warning', Critical: 'danger' }
   return map[level] || 'info'
 }
 
+/**
+ * 加载仪表盘数据
+ * 从模拟API获取统计数据和告警信息
+ */
 const loadData = () => {
   // 从模拟API获取数据
   if (window.MockAPI) {
@@ -157,9 +176,14 @@ const loadData = () => {
   }
 }
 
+/**
+ * 初始化ECharts图表
+ * 包括温度趋势图、换热站状态饼图、热负荷柱状图
+ */
 const initCharts = () => {
   if (!tempChartRef.value || !stationChartRef.value || !loadChartRef.value) return
   
+  // 销毁已存在的图表实例
   if (tempChart) tempChart.dispose()
   if (stationChart) stationChart.dispose()
   if (loadChart) loadChart.dispose()
@@ -258,6 +282,10 @@ const initCharts = () => {
   loadChart.setOption(loadOption)
 }
 
+/**
+ * 刷新数据
+ * 重新加载数据并刷新图表显示
+ */
 const refreshData = () => {
   loadData()
   initCharts()
@@ -271,6 +299,7 @@ window.addEventListener('resize', () => {
   loadChart && loadChart.resize()
 })
 
+// 组件挂载完成后初始化数据
 onMounted(() => {
   nextTick(() => {
     loadData()
