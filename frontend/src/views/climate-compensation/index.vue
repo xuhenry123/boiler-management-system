@@ -597,15 +597,7 @@ const initEffectCompare = () => {
     const chart = echarts.init(effectCompareRef.value)
     const effects = data.data || []
     
-    const xData = []
-    const beforeData = []
-    const afterData = []
-    
-    effects.forEach(item => {
-      xData.push(item.recordDate ? new Date(item.recordDate).toLocaleDateString('zh-CN', { weekday: 'short' }) : '-')
-      beforeData.push(item.energyBefore || 0)
-      afterData.push(item.energyAfter || 0)
-    })
+    let xData = []
     
     if (xData.length === 0) {
       xData = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
