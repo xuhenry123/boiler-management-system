@@ -135,3 +135,27 @@ export const boilerApi = {
     return await apiClient.put(`/api/boiler/${id}`, data)
   }
 }
+
+// ==================== 异常预测 API ====================
+export const anomalyApi = {
+  async getPredictions() {
+    return { data: [], pendingCount: 0, highProbaCount: 0 }
+  }
+}
+
+// ==================== 告警API别名 ====================
+export const alertApi = alarmApi
+
+// ==================== 气候补偿 API ====================
+export const climateApi = {
+  async getConfig() {
+    return { data: {} }
+  }
+}
+
+// ==================== 能效分析 API ====================
+export const efficiencyApi = {
+  async getData() {
+    return { data: {} }
+  }
+}
