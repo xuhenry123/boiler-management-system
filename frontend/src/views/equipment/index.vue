@@ -161,6 +161,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cpu, CircleCheck, Tools, Warning, Plus } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { equipmentApi, stationApi } from '@/api'
 
 // 图表DOM引用
 const typeChartRef = ref(null)
@@ -171,21 +172,17 @@ const equipmentStatus = ref('')
 
 // 统计数据
 const stats = ref({
-  totalCount: 156,
-  runningCount: 142,
-  maintenanceCount: 8,
-  faultCount: 6
+  totalCount: 0,
+  runningCount: 0,
+  maintenanceCount: 0,
+  faultCount: 0
 })
 
+// 换热站列表
+const stationList = ref([])
+
 // 设备列表数据
-const equipmentList = ref([
-  { id: 1, code: 'BLR-001', name: '1号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 92, runtime: 2150 },
-  { id: 2, code: 'BLR-002', name: '2号燃气锅炉', type: 'boiler', station: '换热站1', status: 1, efficiency: 88, runtime: 1980 },
-  { id: 3, code: 'PUMP-001', name: '1号循环泵', type: 'pump', station: '换热站1', status: 1, efficiency: 85, runtime: 3200 },
-  { id: 4, code: 'HE-001', name: '1号板式换热器', type: 'heat_exchanger', station: '换热站1', status: 1, efficiency: 95, runtime: 2800 },
-  { id: 5, code: 'VALVE-001', name: '1号楼调节阀', type: 'valve', station: '换热站1', status: 1, efficiency: 100, runtime: 4500 },
-  { id: 6, code: 'BLR-003', name: '3号燃煤锅炉', type: 'boiler', station: '换热站2', status: 2, efficiency: 75, runtime: 1500 }
-])
+const equipmentList = ref([])
 
 // 维护提醒列表
 const maintenanceReminders = ref([
@@ -201,6 +198,42 @@ const filteredEquipment = computed(() => {
     const statusMatch = !equipmentStatus.value || item.status === parseInt(equipmentStatus.value)
     return typeMatch && statusMatch
   })
+})
+
+/**
+ * 加载设备数据
+ */
+const loadEquipment = async () => {
+  try {
+    const result = await equipmentApi.getEquipment()
+    equipmentList.value = result.data || []
+    
+    // 更新统计数据
+    stats.value.totalCount = equipmentList.value.length
+    stats.value.runningCount = equipmentList.value.filter(e => e.status === 1).length
+    stats.value.maintenanceCount = equipmentList.value.filter(e => e.status === 2).length
+    stats.value.faultCount = equipmentList.value.filter(e => e.status === 0).length
+  } catch (error) {
+    console.error('加载设备数据失败:', error)
+  }
+}
+
+/**
+ * 加载换热站数据
+ */
+const loadStations = async () => {
+  try {
+    const result = await stationApi.getStations()
+    stationList.value = result.data || []
+  } catch (error) {
+    console.error('加载换热站数据失败:', error)
+  }
+}
+
+// 组件挂载完成后加载数据
+onMounted(() => {
+  loadEquipment()
+  loadStations()
 })
 
 /**
