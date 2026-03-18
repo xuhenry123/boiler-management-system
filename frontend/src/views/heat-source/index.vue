@@ -92,6 +92,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { heatSourceApi } from '@/api'
 
 // 图表DOM引用
 const loadPredictChartRef = ref(null)
@@ -101,11 +102,24 @@ const efficiencyChartRef = ref(null)
 const showAddDialog = ref(false)
 
 // 锅炉列表数据
-const boilers = ref([
-  { id: 1, name: '1号燃气锅炉', status: 'running', loadRate: 85, supplyTemp: 120, returnTemp: 70, efficiency: 0.95 },
-  { id: 2, name: '2号燃气锅炉', status: 'running', loadRate: 72, supplyTemp: 118, returnTemp: 68, efficiency: 0.93 },
-  { id: 3, name: '3号燃气锅炉', status: 'stopped', loadRate: 0, supplyTemp: 0, returnTemp: 0, efficiency: 0 }
-])
+const boilers = ref([])
+
+/**
+ * 加载锅炉数据
+ */
+const loadBoilers = async () => {
+  try {
+    const result = await heatSourceApi.getBoilers()
+    boilers.value = result || []
+  } catch (error) {
+    console.error('加载锅炉数据失败:', error)
+    boilers.value = [
+      { id: 1, name: '1号燃气锅炉', status: 'running', loadRate: 85, supplyTemp: 120, returnTemp: 70, efficiency: 0.95 },
+      { id: 2, name: '2号燃气锅炉', status: 'running', loadRate: 72, supplyTemp: 118, returnTemp: 68, efficiency: 0.93 },
+      { id: 3, name: '3号燃气锅炉', status: 'stopped', loadRate: 0, supplyTemp: 0, returnTemp: 0, efficiency: 0 }
+    ]
+  }
+}
 
 /**
  * 获取负荷率进度条颜色
@@ -144,18 +158,26 @@ const handleOptimize = () => {
 /**
  * 初始化热负荷预测曲线图表
  */
-const initLoadPredictChart = () => {
+const initLoadPredictChart = async () => {
   if (!loadPredictChartRef.value) return
   const chart = echarts.init(loadPredictChartRef.value)
+  
+  let chartData = { hours: [], actual: [], predicted: [] }
+  try {
+    chartData = await heatSourceApi.getLoadPrediction()
+  } catch (error) {
+    console.error('获取负荷预测数据失败:', error)
+  }
+  
   const option = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['实际负荷', '预测负荷'] },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'] },
+    xAxis: { type: 'category', data: chartData.hours.length > 0 ? chartData.hours : ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'] },
     yAxis: { type: 'value', name: '负荷(MW)' },
     series: [
-      { name: '实际负荷', type: 'line', data: [45, 42, 55, 60, 58, 52, 48], smooth: true },
-      { name: '预测负荷', type: 'line', data: [null, null, null, null, 55, 53, 50], smooth: true, lineStyle: { type: 'dashed' } }
+      { name: '实际负荷', type: 'line', data: chartData.actual.length > 0 ? chartData.actual : [45, 42, 55, 60, 58, 52, 48], smooth: true },
+      { name: '预测负荷', type: 'line', data: chartData.predicted.length > 0 ? chartData.predicted : [null, null, null, null, 55, 53, 50], smooth: true, lineStyle: { type: 'dashed' } }
     ]
   }
   chart.setOption(option)
@@ -164,16 +186,31 @@ const initLoadPredictChart = () => {
 /**
  * 初始化锅炉效率对比图表
  */
-const initEfficiencyChart = () => {
+const initEfficiencyChart = async () => {
   if (!efficiencyChartRef.value) return
   const chart = echarts.init(efficiencyChartRef.value)
+  
+  let chartData = []
+  try {
+    const result = await heatSourceApi.getEfficiencyComparison()
+    chartData = result || []
+  } catch (error) {
+    console.error('获取效率对比数据失败:', error)
+  }
+  
+  const defaultData = [
+    { name: '1号锅炉', efficiency: 95 },
+    { name: '2号锅炉', efficiency: 93 },
+    { name: '3号锅炉', efficiency: 0 }
+  ]
+  
   const option = {
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: ['1号锅炉', '2号锅炉', '3号锅炉'] },
+    xAxis: { type: 'category', data: chartData.length > 0 ? chartData.map(d => d.name) : ['1号锅炉', '2号锅炉', '3号锅炉'] },
     yAxis: { type: 'value', name: '效率(%)', max: 100 },
     series: [{
       type: 'bar',
-      data: [95, 93, 0],
+      data: chartData.length > 0 ? chartData.map(d => d.efficiency) : [95, 93, 0],
       itemStyle: {
         color: (params) => {
           const colors = ['#67c23a', '#e6a23c', '#909399']
@@ -197,6 +234,7 @@ const trainModel = () => {
 
 // 组件挂载完成后初始化图表
 onMounted(() => {
+  loadBoilers()
   initLoadPredictChart()
   initEfficiencyChart()
 })

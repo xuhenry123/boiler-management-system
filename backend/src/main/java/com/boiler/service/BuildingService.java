@@ -88,4 +88,12 @@ public class BuildingService {
     public boolean deleteBuilding(Long id) {
         return buildingMapper.deleteById(id) > 0;
     }
+
+    /**
+     * 查询所有建筑
+     * @return 建筑列表
+     */
+    public List<Building> listAllBuildings() {
+        return buildingMapper.selectList(null);
+    }
 }

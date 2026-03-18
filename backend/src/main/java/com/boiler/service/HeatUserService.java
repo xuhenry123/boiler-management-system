@@ -89,4 +89,12 @@ public class HeatUserService {
     public boolean deleteUser(Long id) {
         return heatUserMapper.deleteById(id) > 0;
     }
+
+    /**
+     * 查询所有热用户
+     * @return 用户列表
+     */
+    public List<HeatUser> listAllUsers() {
+        return heatUserMapper.selectList(null);
+    }
 }

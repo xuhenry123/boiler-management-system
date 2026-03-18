@@ -118,11 +118,55 @@ export const equipmentApi = {
   async getEquipment(params = {}) {
     return await apiClient.get('/api/equipment', { params })
   },
+  async getMaintenanceReminders() {
+    return await apiClient.get('/api/equipment/maintenance-reminders')
+  },
+  async getTypeDistribution() {
+    return await apiClient.get('/api/equipment/type-distribution')
+  },
   async createEquipment(data) {
     return await apiClient.post('/api/equipment', data)
   },
   async updateEquipment(id, data) {
     return await apiClient.put(`/api/equipment/${id}`, data)
+  }
+}
+
+// ==================== 热源 API ====================
+export const heatSourceApi = {
+  async getBoilers() {
+    return await apiClient.get('/api/heat-source/boilers')
+  },
+  async getLoadPrediction() {
+    return await apiClient.get('/api/heat-source/load-prediction')
+  },
+  async getEfficiencyComparison() {
+    return await apiClient.get('/api/heat-source/efficiency-comparison')
+  },
+  async getModelInfo() {
+    return await apiClient.get('/api/heat-source/model-info')
+  },
+  async adjustBoiler(id, direction) {
+    return await apiClient.post(`/api/heat-source/adjust?id=${id}&direction=${direction}`)
+  }
+}
+
+// ==================== 换热站自动控制 API ====================
+export const stationControlApi = {
+  async getAllStations() {
+    return await apiClient.get('/api/station/all')
+  },
+  async getRealtimeData(stationId) {
+    return await apiClient.get(`/api/station/${stationId}/realtime-data`)
+  },
+  async getPidConfig(stationId) {
+    return await apiClient.get(`/api/station/${stationId}/pid-config`)
+  },
+  async savePidConfig(stationId, config) {
+    return await apiClient.put(`/api/station/${stationId}/pid-config`, config)
+  },
+  async getHistoryData(stationId, period = 'week') {
+    return await apiClient.get(`/api/station/${stationId}/history?period=${period}`)
   }
 }
 
@@ -150,6 +194,30 @@ export const alertApi = alarmApi
 export const climateApi = {
   async getConfig() {
     return { data: {} }
+  },
+  async getStatistics() {
+    return await apiClient.get('/api/climate/statistics')
+  },
+  async getConfigs(params = {}) {
+    return await apiClient.get('/api/climate/configs', { params })
+  },
+  async getConfigById(id) {
+    return await apiClient.get(`/api/climate/configs/${id}`)
+  },
+  async createConfig(data) {
+    return await apiClient.post('/api/climate/configs', data)
+  },
+  async updateConfig(id, data) {
+    return await apiClient.put(`/api/climate/configs/${id}`, data)
+  },
+  async deleteConfig(id) {
+    return await apiClient.delete(`/api/climate/configs/${id}`)
+  },
+  async getCurves(params = {}) {
+    return await apiClient.get('/api/climate/curves', { params })
+  },
+  async getEffects(params = {}) {
+    return await apiClient.get('/api/climate/effects', { params })
   }
 }
 
@@ -157,5 +225,29 @@ export const climateApi = {
 export const efficiencyApi = {
   async getData() {
     return { data: {} }
+  },
+  async getOverview(params = {}) {
+    return await apiClient.get('/api/efficiency/overview', { params })
+  },
+  async getRanking(params = {}) {
+    return await apiClient.get('/api/efficiency/ranking', { params })
+  },
+  async getTerminalMonitor(params = {}) {
+    return await apiClient.get('/api/efficiency/terminal-monitor', { params })
+  },
+  async getComparison(params = {}) {
+    return await apiClient.get('/api/efficiency/comparison', { params })
+  },
+  async getTrend(params = {}) {
+    return await apiClient.get('/api/efficiency/trend', { params })
+  },
+  async getHeatingCurve(params = {}) {
+    return await apiClient.get('/api/efficiency/heating-curve', { params })
+  },
+  async saveResidentTemperature(data) {
+    return await apiClient.post('/api/efficiency/resident-temperature', data)
+  },
+  async applyHeatingCurve(stationId, curveData) {
+    return await apiClient.post(`/api/efficiency/apply-curve/${stationId}`, curveData)
   }
 }

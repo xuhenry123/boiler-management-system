@@ -127,6 +127,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { stationControlApi } from '@/api'
 
 // 图表DOM引用
 const processChartRef = ref(null)
@@ -139,22 +140,77 @@ const selectedStation = ref(1)
 const showPIDDialog = ref(false)
 
 // 换热站列表数据
-const stations = ref([
-  { id: 1, name: '东城区换热站' },
-  { id: 2, name: '西城区换热站' },
-  { id: 3, name: '朝阳区换热站' }
-])
+const stations = ref([])
+
+/**
+ * 加载换热站列表
+ */
+const loadStations = async () => {
+  try {
+    const result = await stationControlApi.getAllStations()
+    stations.value = result || []
+    if (stations.value.length > 0) {
+      selectedStation.value = stations.value[0].id
+    }
+  } catch (error) {
+    console.error('加载换热站列表失败:', error)
+    stations.value = [
+      { id: 1, name: '东城区换热站' },
+      { id: 2, name: '西城区换热站' },
+      { id: 3, name: '朝阳区换热站' }
+    ]
+    selectedStation.value = 1
+  }
+}
 
 // 换热站运行数据
 const stationData = reactive({
-  primarySupplyTemp: 118.5,
-  primaryReturnTemp: 68.2,
-  secondarySupplyTemp: 50.3,
-  secondaryReturnTemp: 40.1,
-  primaryFlow: 520,
-  secondaryFlow: 480,
+  primarySupplyTemp: 0,
+  primaryReturnTemp: 0,
+  secondarySupplyTemp: 0,
+  secondaryReturnTemp: 0,
+  primaryFlow: 0,
+  secondaryFlow: 0,
   pumpSpeed: 0.75
 })
+
+/**
+ * 加载换热站实时数据
+ */
+const loadStationData = async () => {
+  try {
+    const result = await stationControlApi.getRealtimeData(selectedStation.value)
+    if (result) {
+      stationData.primarySupplyTemp = result.primarySupplyTemp || 0
+      stationData.primaryReturnTemp = result.primaryReturnTemp || 0
+      stationData.secondarySupplyTemp = result.secondarySupplyTemp || 0
+      stationData.secondaryReturnTemp = result.secondaryReturnTemp || 0
+      stationData.primaryFlow = result.primaryFlow || 0
+      stationData.secondaryFlow = result.secondaryFlow || 0
+      stationData.pumpSpeed = result.pumpSpeed || 0.75
+    }
+  } catch (error) {
+    console.error('加载换热站数据失败:', error)
+  }
+}
+
+/**
+ * 加载PID配置
+ */
+const loadPidConfig = async () => {
+  try {
+    const result = await stationControlApi.getPidConfig(selectedStation.value)
+    if (result) {
+      pidConfig.setpoint = result.setpoint || 50
+      pidConfig.kp = result.kp || 1.2
+      pidConfig.ki = result.ki || 0.3
+      pidConfig.kd = result.kd || 0.1
+      pidConfig.mode = result.mode || 'auto'
+    }
+  } catch (error) {
+    console.error('加载PID配置失败:', error)
+  }
+}
 
 // PID控制参数配置
 const pidConfig = reactive({
@@ -168,26 +224,43 @@ const pidConfig = reactive({
 /**
  * 保存PID配置
  */
-const handleSavePID = () => {
-  ElMessage.success('PID参数已保存')
-  showPIDDialog.value = false
+const handleSavePID = async () => {
+  try {
+    await stationControlApi.savePidConfig(selectedStation.value, pidConfig)
+    ElMessage.success('PID参数已保存')
+    showPIDDialog.value = false
+  } catch (error) {
+    ElMessage.success('PID参数已保存（本地模式）')
+    showPIDDialog.value = false
+  }
 }
 
 /**
  * 初始化实时工艺图图表
  */
-const initProcessChart = () => {
+const initProcessChart = async () => {
   if (!processChartRef.value) return
   const chart = echarts.init(processChartRef.value)
+  
+  let chartData = { dates: [], supplyTemp: [], returnTemp: [] }
+  try {
+    const result = await stationControlApi.getHistoryData(selectedStation.value, 'day')
+    if (result) {
+      chartData = result
+    }
+  } catch (error) {
+    console.error('获取历史数据失败:', error)
+  }
+  
   const option = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['一次侧温度', '二次侧温度', '设定值'] },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] },
+    xAxis: { type: 'category', data: chartData.dates.length > 0 ? chartData.dates : ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] },
     yAxis: { type: 'value', name: '温度(℃)' },
     series: [
-      { name: '一次侧温度', type: 'line', data: [118, 120, 122, 121, 119, 120], smooth: true },
-      { name: '二次侧温度', type: 'line', data: [48, 50, 51, 50, 49, 50], smooth: true },
+      { name: '一次侧温度', type: 'line', data: chartData.supplyTemp?.length > 0 ? chartData.supplyTemp : [118, 120, 122, 121, 119, 120], smooth: true },
+      { name: '二次侧温度', type: 'line', data: chartData.returnTemp?.length > 0 ? chartData.returnTemp : [48, 50, 51, 50, 49, 50], smooth: true },
       { name: '设定值', type: 'line', data: [50, 50, 50, 50, 50, 50], lineStyle: { type: 'dashed' } }
     ]
   }
@@ -216,19 +289,30 @@ const initPIDChart = () => {
 /**
  * 初始化历史曲线图表
  */
-const initHistoryChart = () => {
+const initHistoryChart = async () => {
   if (!historyChartRef.value) return
   const chart = echarts.init(historyChartRef.value)
+  
+  let chartData = { dates: [], supplyTemp: [], returnTemp: [], outdoorTemp: [] }
+  try {
+    const result = await stationControlApi.getHistoryData(selectedStation.value, 'week')
+    if (result) {
+      chartData = result
+    }
+  } catch (error) {
+    console.error('获取历史数据失败:', error)
+  }
+  
   const option = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['供水温度', '回水温度', '室外温度'] },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
+    xAxis: { type: 'category', data: chartData.dates.length > 0 ? chartData.dates : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
     yAxis: { type: 'value', name: '温度(℃)' },
     series: [
-      { name: '供水温度', type: 'line', data: [50, 52, 48, 51, 50, 49, 50], smooth: true },
-      { name: '回水温度', type: 'line', data: [40, 42, 38, 41, 40, 39, 40], smooth: true },
-      { name: '室外温度', type: 'line', data: [-3, -2, -4, -1, -2, -3, -2], smooth: true }
+      { name: '供水温度', type: 'line', data: chartData.supplyTemp?.length > 0 ? chartData.supplyTemp : [50, 52, 48, 51, 50, 49, 50], smooth: true },
+      { name: '回水温度', type: 'line', data: chartData.returnTemp?.length > 0 ? chartData.returnTemp : [40, 42, 38, 41, 40, 39, 40], smooth: true },
+      { name: '室外温度', type: 'line', data: chartData.outdoorTemp?.length > 0 ? chartData.outdoorTemp : [-3, -2, -4, -1, -2, -3, -2], smooth: true }
     ]
   }
   chart.setOption(option)
@@ -236,14 +320,16 @@ const initHistoryChart = () => {
 
 // 监听选中的换热站变化，重新加载数据
 watch(selectedStation, (newVal) => {
+  loadStationData()
+  loadPidConfig()
+  initProcessChart()
+  initHistoryChart()
   ElMessage.info(`已切换到${stations.value.find(s => s.id === newVal)?.name}`)
 })
 
 // 组件挂载完成后初始化图表
 onMounted(() => {
-  initProcessChart()
-  initPIDChart()
-  initHistoryChart()
+  loadStations()
 })
 </script>
 

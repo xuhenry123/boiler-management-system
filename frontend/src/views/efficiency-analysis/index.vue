@@ -263,8 +263,9 @@ const getTrendLabel = (trend) => {
 
 const loadStations = async () => {
   try {
-    const res = await stationApi.getAllStations()
-    stations.value = res.map(s => ({ id: s.id, name: s.stationName || s.stationCode }))
+    const res = await stationApi.getStations()
+    const allData = res.data || []
+    stations.value = allData.map(s => ({ id: s.id, name: s.stationName || s.stationCode }))
     if (stations.value.length > 0) {
       selectedStation.value = stations.value[0].id
     }

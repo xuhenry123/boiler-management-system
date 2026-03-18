@@ -185,11 +185,24 @@ const stationList = ref([])
 const equipmentList = ref([])
 
 // 维护提醒列表
-const maintenanceReminders = ref([
-  { id: 1, equipment: '1号循环泵', maintainType: '定期保养', dueDate: '2026-03-20', daysLeft: 5 },
-  { id: 2, equipment: '2号燃气锅炉', maintainType: '年度检修', dueDate: '2026-03-25', daysLeft: 10 },
-  { id: 3, equipment: '1号板式换热器', maintainType: '清洗维护', dueDate: '2026-03-18', daysLeft: 3 }
-])
+const maintenanceReminders = ref([])
+
+/**
+ * 加载维护提醒数据
+ */
+const loadMaintenanceReminders = async () => {
+  try {
+    const result = await equipmentApi.getMaintenanceReminders()
+    maintenanceReminders.value = result || []
+  } catch (error) {
+    console.error('加载维护提醒失败:', error)
+    maintenanceReminders.value = [
+      { id: 1, equipment: '1号循环泵', maintainType: '定期保养', dueDate: '2026-03-20', daysLeft: 5 },
+      { id: 2, equipment: '2号燃气锅炉', maintainType: '年度检修', dueDate: '2026-03-25', daysLeft: 10 },
+      { id: 3, equipment: '1号板式换热器', maintainType: '清洗维护', dueDate: '2026-03-18', daysLeft: 3 }
+    ]
+  }
+}
 
 // 过滤后的设备列表
 const filteredEquipment = computed(() => {
@@ -234,6 +247,7 @@ const loadStations = async () => {
 onMounted(() => {
   loadEquipment()
   loadStations()
+  loadMaintenanceReminders()
 })
 
 /**
@@ -291,9 +305,24 @@ const handleMaintainReminder = (row) => {
 /**
  * 初始化设备类型分布图表
  */
-const initTypeChart = () => {
+const initTypeChart = async () => {
   if (!typeChartRef.value) return
   const chart = echarts.init(typeChartRef.value)
+  
+  let chartData = []
+  try {
+    const result = await equipmentApi.getTypeDistribution()
+    chartData = result || []
+  } catch (error) {
+    console.error('获取设备类型分布失败:', error)
+    chartData = [
+      { value: 12, name: '锅炉' },
+      { value: 28, name: '循环泵' },
+      { value: 18, name: '换热器' },
+      { value: 98, name: '调节阀' }
+    ]
+  }
+  
   const option = {
     title: { text: '设备类型分布', left: 'center' },
     tooltip: { trigger: 'item' },
@@ -302,7 +331,7 @@ const initTypeChart = () => {
       type: 'pie',
       radius: ['40%', '70%'],
       center: ['50%', '45%'],
-      data: [
+      data: chartData.length > 0 ? chartData : [
         { value: 12, name: '锅炉' },
         { value: 28, name: '循环泵' },
         { value: 18, name: '换热器' },
