@@ -425,13 +425,6 @@ INSERT INTO boiler (boiler_code, boiler_name, boiler_type, manufacturer, model, 
 ('BLR002', '2号燃气锅炉', 'gas', '某锅炉厂', 'WNS10-1.0', 10.00, 1.00, 0.95, 1),
 ('BLR003', '3号燃气锅炉', 'gas', '某锅炉厂', 'WNS15-1.0', 15.00, 1.00, 0.94, 0);
 
--- 插入阀门设备测试数据
-INSERT INTO valve_device (valve_code, valve_name, valve_type, node_id, manufacturer, model, diameter, open_ratio, control_protocol, status) VALUES
-('V001', '1号楼入口调节阀', 'control', 1, '某阀门厂', CV3000, 150, 0.75, 'modbus', 1),
-('V002', '2号楼入口调节阀', 'control', 2, '某阀门厂', CV3000, 150, 0.80, 'modbus', 1),
-('V003', '3号楼入口调节阀', 'control', 3, '某阀门厂', CV3000, 200, 0.70, 'mqtt', 1),
-('V004', '4号楼入口调节阀', 'control', 4, '某阀门厂', CV3000, 200, 0.65, 'mqtt', 1);
-
 -- 插入预测模型测试数据
 INSERT INTO prediction_model (model_type, model_version, accuracy, mse, status) VALUES
 ('lstm', 'v1.0.0', 0.9235, 0.562, 1),

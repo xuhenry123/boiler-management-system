@@ -65,19 +65,19 @@ export const stationApi = {
 // ==================== 建筑物 API ====================
 export const buildingApi = {
   async getBuildings(params = {}) {
-    return await apiClient.get('/api/building', { params })
+    return await apiClient.get('/api/heat-user/building', { params })
   },
   async getBuildingById(id) {
-    return await apiClient.get(`/api/building/${id}`)
+    return await apiClient.get(`/api/heat-user/building/${id}`)
   },
   async createBuilding(data) {
-    return await apiClient.post('/api/building', data)
+    return await apiClient.post('/api/heat-user/building', data)
   },
   async updateBuilding(id, data) {
-    return await apiClient.put(`/api/building/${id}`, data)
+    return await apiClient.put(`/api/heat-user/building/${id}`, data)
   },
   async deleteBuilding(id) {
-    return await apiClient.delete(`/api/building/${id}`)
+    return await apiClient.delete(`/api/heat-user/building/${id}`)
   }
 }
 
