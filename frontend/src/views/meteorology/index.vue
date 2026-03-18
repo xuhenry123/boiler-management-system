@@ -225,6 +225,7 @@ import { ref, onMounted } from 'vue'
 import { Sunny, WindPower, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { meteorologyApi } from '@/api'
 
 const tempChartRef = ref(null)
 const correlationChartRef = ref(null)
@@ -233,14 +234,14 @@ const correlationType = ref('temp')
 const historyDateRange = ref([])
 const historyPage = ref(1)
 const pageSize = ref(5)
-const historyTotal = ref(15)
-const coldWaveWarning = ref(true)
+const historyTotal = ref(0)
+const coldWaveWarning = ref(false)
 
 const currentWeather = ref({
-  outdoorTemp: -5,
+  outdoorTemp: 0,
   weatherType: '晴',
-  windSpeed: 3.5,
-  humidity: 45
+  windSpeed: 0,
+  humidity: 0
 })
 
 const weatherConfig = ref({
@@ -249,27 +250,58 @@ const weatherConfig = ref({
   forecastHours: '72'
 })
 
-const forecastData = ref([
-  { time: '08:00', temp: -6, weather: '晴', wind: '3-4级', humidity: '50%' },
-  { time: '14:00', temp: -2, weather: '晴', wind: '2-3级', humidity: '45%' },
-  { time: '20:00', temp: -8, weather: '多云', wind: '3-4级', humidity: '55%' },
-  { time: '02:00', temp: -10, weather: '阴', wind: '4-5级', humidity: '60%' },
-  { time: '08:00', temp: -12, weather: '小雪', wind: '4-5级', humidity: '70%' }
-])
+const forecastData = ref([])
+const historyData = ref([])
+const warnings = ref([])
 
-const historyData = ref([
-  { date: '2026-03-15', avgTemp: -3.5, maxTemp: 2, minTemp: -8, weather: '晴', heatingDegree: 23.5 },
-  { date: '2026-03-14', avgTemp: -2.0, maxTemp: 4, minTemp: -7, weather: '多云', heatingDegree: 22.0 },
-  { date: '2026-03-13', avgTemp: 0.5, maxTemp: 5, minTemp: -4, weather: '阴', heatingDegree: 19.5 },
-  { date: '2026-03-12', avgTemp: 1.2, maxTemp: 6, minTemp: -3, weather: '晴', heatingDegree: 18.8 },
-  { date: '2026-03-11', avgTemp: -1.5, maxTemp: 3, minTemp: -6, weather: '多云', heatingDegree: 21.5 }
-])
+/**
+ * 加载当前天气数据
+ */
+const loadCurrentWeather = async () => {
+  try {
+    const result = await meteorologyApi.getCurrentWeather()
+    currentWeather.value = result || { outdoorTemp: 0, weatherType: '晴', windSpeed: 0, humidity: 0 }
+  } catch (error) {
+    console.error('加载天气数据失败:', error)
+  }
+}
 
-const warnings = ref([
-  { type: '寒潮', level: '橙色', content: '预计未来24小时气温下降8-10°C', publishTime: '2026-03-15 06:00:00', effect: 'high' },
-  { type: '大风', level: '黄色', content: '预计未来12小时有4-5级大风', publishTime: '2026-03-15 08:00:00', effect: 'medium' },
-  { type: '低温', level: '蓝色', content: '最低温度将降至-10°C以下', publishTime: '2026-03-14 18:00:00', effect: 'high' }
-])
+/**
+ * 加载天气预报数据
+ */
+const loadForecast = async () => {
+  try {
+    const result = await meteorologyApi.getForecast()
+    forecastData.value = result.data || []
+  } catch (error) {
+    console.error('加载预报数据失败:', error)
+  }
+}
+
+/**
+ * 加载历史数据
+ */
+const loadHistory = async () => {
+  try {
+    const result = await meteorologyApi.getHistory()
+    historyData.value = result.data || []
+    historyTotal.value = result.total || 0
+  } catch (error) {
+    console.error('加载历史数据失败:', error)
+  }
+}
+
+/**
+ * 加载预警数据
+ */
+const loadWarnings = async () => {
+  try {
+    const result = await meteorologyApi.getWarnings()
+    warnings.value = result.data || []
+  } catch (error) {
+    console.error('加载预警数据失败:', error)
+  }
+}
 
 const getWarningType = (type) => {
   const map = { '寒潮': 'warning', '大风': '', '低温': 'info' }

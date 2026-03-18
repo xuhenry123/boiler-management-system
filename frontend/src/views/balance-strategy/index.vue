@@ -154,12 +154,13 @@
 <script setup>
 import { ref } from 'vue'
 import { Operation, PieChart, Timer, Clock } from '@element-plus/icons-vue'
+import { balanceStrategyApi } from '@/api'
 
 const balanceStrategy = ref({
   strategyName: '智能平衡策略',
-  balanceRate: 95.2,
-  autoRate: 88,
-  lastAdjust: '30分钟前'
+  balanceRate: 0,
+  autoRate: 0,
+  lastAdjust: ''
 })
 
 const strategyConfig = ref({
@@ -171,16 +172,32 @@ const strategyConfig = ref({
   enabled: true
 })
 
-const strategyList = ref([
-  { name: '智能平衡策略', mode: '自动', frequency: '实时', targetBalance: 95, status: true },
-  { name: '保守策略', mode: '手动', frequency: '每日', targetBalance: 90, status: false },
-  { name: '快速平衡', mode: '混合', frequency: '每小时', targetBalance: 98, status: false }
-])
+const strategyList = ref([])
+const executionRecords = ref([])
 
-const executionRecords = ref([
-  { time: '2026-03-15 10:30:00', strategy: '智能平衡策略', target: '2号楼阀门', adjustment: '5%', result: '成功', balanceAfter: 96.5 },
-  { time: '2026-03-15 10:15:00', strategy: '智能平衡策略', target: '3号楼阀门', adjustment: '-3%', result: '成功', balanceAfter: 95.8 }
-])
+/**
+ * 加载策略列表
+ */
+const loadStrategies = async () => {
+  try {
+    const result = await balanceStrategyApi.getStrategies()
+    strategyList.value = result.data || []
+  } catch (error) {
+    console.error('加载策略列表失败:', error)
+  }
+}
+
+/**
+ * 加载执行记录
+ */
+const loadExecutionRecords = async () => {
+  try {
+    const result = await balanceStrategyApi.getExecutionRecords()
+    executionRecords.value = result.data || []
+  } catch (error) {
+    console.error('加载执行记录失败:', error)
+  }
+}
 
 const saveStrategy = () => {
   console.log('保存策略')

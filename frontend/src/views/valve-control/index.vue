@@ -117,17 +117,27 @@
 import { ref, reactive, onMounted } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { valveControlApi } from '@/api'
 
 const pidControlChartRef = ref(null)
 
-const valves = ref([
-  { id: 1, valveName: '1号楼入口调节阀', currentOpenRatio: 0.75, targetOpenRatio: 0.80, status: 'running', protocol: 'Modbus', responseTime: 3.5 },
-  { id: 2, valveName: '2号楼入口调节阀', currentOpenRatio: 0.80, targetOpenRatio: 0.78, status: 'running', protocol: 'Modbus', responseTime: 3.5 },
-  { id: 3, valveName: '3号楼入口调节阀', currentOpenRatio: 0.70, targetOpenRatio: 0.72, status: 'running', protocol: 'MQTT', responseTime: 2.0 },
-  { id: 4, valveName: '4号楼入口调节阀', currentOpenRatio: 0.65, targetOpenRatio: 0.68, status: 'standby', protocol: 'MQTT', responseTime: 2.0 }
-])
+const valves = ref([])
+const selectedValve = ref({})
 
-const selectedValve = ref(valves.value[0])
+/**
+ * 加载阀门列表
+ */
+const loadValves = async () => {
+  try {
+    const result = await valveControlApi.getValves()
+    valves.value = result.data || []
+    if (valves.value.length > 0) {
+      selectedValve.value = valves.value[0]
+    }
+  } catch (error) {
+    console.error('加载阀门列表失败:', error)
+  }
+}
 
 const fuzzyPID = reactive({
   kp: 1.2,

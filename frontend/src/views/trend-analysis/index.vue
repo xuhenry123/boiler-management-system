@@ -147,6 +147,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { trendAnalysisApi } from '@/api'
 
 const trendChartRef = ref(null)
 const compareChartRef = ref(null)
@@ -154,23 +155,33 @@ const compareChartRef = ref(null)
 const trendType = ref('temperature')
 const timeRange = ref('week')
 
-const energyRankData = ref([
-  { rank: 1, station: '换热站1', consumption: '156.8 tce' },
-  { rank: 2, station: '换热站2', consumption: '142.3 tce' },
-  { rank: 3, station: '换热站3', consumption: '128.5 tce' }
-])
+const energyRankData = ref([])
+const anomalyData = ref([])
+const reportData = ref([])
 
-const anomalyData = ref([
-  { type: '温度异常', count: 12, trend: '下降', suggestion: '继续观察' },
-  { type: '压力异常', count: 3, trend: '上升', suggestion: '检查管网' },
-  { type: '能耗异常', count: 5, trend: '下降', suggestion: '优化运行' }
-])
+/**
+ * 加载能耗排行数据
+ */
+const loadEnergyRank = async () => {
+  try {
+    const result = await trendAnalysisApi.getEnergyRank()
+    energyRankData.value = result.data || []
+  } catch (error) {
+    console.error('加载能耗排行失败:', error)
+  }
+}
 
-const reportData = ref([
-  { indicator: '平均室温', currentValue: '20.5°C', lastPeriod: '19.8°C', changeRate: 3.5, analysis: '室温达标率提升，供热质量改善' },
-  { indicator: '单位面积能耗', currentValue: '0.45 kWh/m²', lastPeriod: '0.52 kWh/m²', changeRate: -13.5, analysis: '能效显著提升，节能效果明显' },
-  { indicator: '系统能效比', currentValue: '3.2', lastPeriod: '2.9', changeRate: 10.3, analysis: '能效比提高，锅炉运行优化' }
-])
+/**
+ * 加载异常数据
+ */
+const loadAnomalyData = async () => {
+  try {
+    const result = await trendAnalysisApi.getAnomalyData()
+    anomalyData.value = result.data || []
+  } catch (error) {
+    console.error('加载异常数据失败:', error)
+  }
+}
 
 const initTrendChart = () => {
   const chart = echarts.init(trendChartRef.value)

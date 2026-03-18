@@ -219,6 +219,7 @@ import { ref, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { Refresh, User, CircleCheck, Warning, Coin } from '@element-plus/icons-vue'
+import { demandHeatingApi, heatUserApi } from '@/api'
 
 const tempDistChartRef = ref(null)
 const predictChartRef = ref(null)
@@ -236,10 +237,10 @@ const preheatTime = ref(30)
 const energySavingMode = ref(true)
 
 const stats = ref({
-  totalUsers: 156,
-  normalUsers: 142,
-  abnormalUsers: 14,
-  energySaving: 12.5
+  totalUsers: 0,
+  normalUsers: 0,
+  abnormalUsers: 0,
+  energySaving: 0
 })
 
 const tempDeviationMarks = {
@@ -249,16 +250,31 @@ const tempDeviationMarks = {
   3: '3℃'
 }
 
-const temperatureData = ref([
-  { userCode: 'U001', userName: '张三', buildingName: '阳光花园1号楼', temperature: 19.5, targetTemp: 20.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U002', userName: '李四', buildingName: '阳光花园1号楼', temperature: 20.5, targetTemp: 21.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U003', userName: '王五', buildingName: '阳光花园1号楼', temperature: 19.0, targetTemp: 20.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U004', userName: '赵六', buildingName: '阳光花园2号楼', temperature: 21.5, targetTemp: 22.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U005', userName: '钱七', buildingName: '商业大厦A座', temperature: 20.0, targetTemp: 20.0, valveStatus: 'off', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U006', userName: '孙八', buildingName: '商业大厦A座', temperature: 20.2, targetTemp: 20.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U007', userName: '周九', buildingName: '阳光花园2号楼', temperature: 18.5, targetTemp: 20.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' },
-  { userCode: 'U008', userName: '吴十', buildingName: '阳光花园3号楼', temperature: 22.0, targetTemp: 21.0, valveStatus: 'on', collectTime: '2026-03-15 10:00:00' }
-])
+const temperatureData = ref([])
+
+/**
+ * 加载统计数据
+ */
+const loadStats = async () => {
+  try {
+    const result = await demandHeatingApi.getStats()
+    stats.value = result || { totalUsers: 0, normalUsers: 0, abnormalUsers: 0, energySaving: 0 }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+  }
+}
+
+/**
+ * 加载温度数据
+ */
+const loadTemperatureData = async () => {
+  try {
+    const result = await demandHeatingApi.getTemperatureData()
+    temperatureData.value = result.data || []
+  } catch (error) {
+    console.error('加载温度数据失败:', error)
+  }
+}
 
 const filteredTemperatureData = computed(() => {
   if (!searchKeyword.value) return temperatureData.value

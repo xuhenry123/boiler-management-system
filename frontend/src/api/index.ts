@@ -251,3 +251,185 @@ export const efficiencyApi = {
     return await apiClient.post(`/api/efficiency/apply-curve/${stationId}`, curveData)
   }
 }
+
+// ==================== 风险评估 API ====================
+export const riskApi = {
+  async getRiskIndex(params = {}) {
+    return await apiClient.get('/api/risk/index', { params })
+  },
+  async getRiskDimension() {
+    return await apiClient.get('/api/risk/dimension')
+  },
+  async getRiskDetails(params = {}) {
+    return await apiClient.get('/api/risk/details', { params })
+  },
+  async getRiskTrend(params = {}) {
+    return await apiClient.get('/api/risk/trend', { params })
+  },
+  async getRiskDistribution() {
+    return await apiClient.get('/api/risk/distribution')
+  },
+  async getRiskAlerts(params = {}) {
+    return await apiClient.get('/api/risk/alert', { params })
+  },
+  async handleAlert(id, data) {
+    return await apiClient.put(`/api/risk/alert/handle/${id}`, data)
+  },
+  async generateReport(type) {
+    return await apiClient.get('/api/risk/report', { params: { type } })
+  }
+}
+
+// ==================== 按需供热 API ====================
+export const demandHeatingApi = {
+  async getStats() {
+    return await apiClient.get('/api/demand-heating/stats')
+  },
+  async getTemperatureData(params = {}) {
+    return await apiClient.get('/api/demand-heating/temperature', { params })
+  },
+  async updateTargetTemp(userId, targetTemp) {
+    return await apiClient.put(`/api/demand-heating/user/${userId}/target-temp`, { targetTemp })
+  },
+  async toggleValve(userId, status) {
+    return await apiClient.put(`/api/demand-heating/user/${userId}/valve`, { status })
+  },
+  async getPrediction(userId, hours) {
+    return await apiClient.get(`/api/demand-heating/prediction/${userId}`, { params: { hours } })
+  },
+  async getTemperatureDistribution() {
+    return await apiClient.get('/api/demand-heating/temperature-distribution')
+  }
+}
+
+// ==================== 阀门控制 API ====================
+export const valveControlApi = {
+  async getValves(params = {}) {
+    return await apiClient.get('/api/valve', { params })
+  },
+  async getValveById(id) {
+    return await apiClient.get(`/api/valve/${id}`)
+  },
+  async controlValve(id, openRatio) {
+    return await apiClient.post(`/api/valve/${id}/control`, { openRatio })
+  },
+  async getFuzzyPIDConfig(valveId) {
+    return await apiClient.get(`/api/valve/${valveId}/fuzzy-pid`)
+  },
+  async saveFuzzyPIDConfig(valveId, config) {
+    return await apiClient.put(`/api/valve/${valveId}/fuzzy-pid`, config)
+  },
+  async getControlHistory(valveId, period) {
+    return await apiClient.get(`/api/valve/${valveId}/history`, { params: { period } })
+  }
+}
+
+// ==================== 负荷预测 API ====================
+export const loadForecastApi = {
+  async getForecast(params = {}) {
+    return await apiClient.get('/api/load-forecast', { params })
+  },
+  async getStationForecast(stationId, params = {}) {
+    return await apiClient.get(`/api/load-forecast/station/${stationId}`, { params })
+  },
+  async getForecastDetails(params = {}) {
+    return await apiClient.get('/api/load-forecast/details', { params })
+  }
+}
+
+// ==================== 气象数据 API ====================
+export const meteorologyApi = {
+  async getCurrentWeather() {
+    return await apiClient.get('/api/meteorology/current')
+  },
+  async getForecast(params = {}) {
+    return await apiClient.get('/api/meteorology/forecast', { params })
+  },
+  async getHistory(params = {}) {
+    return await apiClient.get('/api/meteorology/history', { params })
+  },
+  async getWarnings() {
+    return await apiClient.get('/api/meteorology/warnings')
+  }
+}
+
+// ==================== 平衡策略 API ====================
+export const balanceStrategyApi = {
+  async getStrategies(params = {}) {
+    return await apiClient.get('/api/balance/strategies', { params })
+  },
+  async executeStrategy(id) {
+    return await apiClient.post(`/api/balance/strategies/${id}/execute`)
+  },
+  async getExecutionRecords(params = {}) {
+    return await apiClient.get('/api/balance/execution-records', { params })
+  }
+}
+
+// ==================== 趋势分析 API ====================
+export const trendAnalysisApi = {
+  async getEnergyRank(params = {}) {
+    return await apiClient.get('/api/trend/energy-rank', { params })
+  },
+  async getAnomalyData(params = {}) {
+    return await apiClient.get('/api/trend/anomaly', { params })
+  },
+  async getReports(params = {}) {
+    return await apiClient.get('/api/trend/reports', { params })
+  }
+}
+
+// ==================== 能耗分析 API ====================
+export const costAnalysisApi = {
+  async getRankList(params = {}) {
+    return await apiClient.get('/api/cost/rank', { params })
+  },
+  async getCostList(params = {}) {
+    return await apiClient.get('/api/cost/list', { params })
+  },
+  async getCostTrend(params = {}) {
+    return await apiClient.get('/api/cost/trend', { params })
+  }
+}
+
+// ==================== 仿真 API ====================
+export const simulationApi = {
+  async getNodes(params = {}) {
+    return await apiClient.get('/api/simulation/nodes', { params })
+  },
+  async runHydraulicSimulation(params = {}) {
+    return await apiClient.post('/api/simulation/hydraulic', params)
+  },
+  async getSimulationResults(params = {}) {
+    return await apiClient.get('/api/simulation/results', { params })
+  }
+}
+
+// ==================== 异常预测 API ====================
+export const anomalyPredictionApi = {
+  async getMonitorPoints() {
+    return await apiClient.get('/api/anomaly/monitor-points')
+  },
+  async getPredictions(params = {}) {
+    return await apiClient.get('/api/anomaly/predictions', { params })
+  },
+  async getPredictionDetail(id) {
+    return await apiClient.get(`/api/anomaly/predictions/${id}`)
+  },
+  async acknowledgeAnomaly(id) {
+    return await apiClient.post(`/api/anomaly/predictions/${id}/acknowledge`)
+  }
+}
+
+// ==================== 场景优化 API ====================
+export const multiScenarioApi = {
+  async getScenarios(params = {}) {
+    return await apiClient.get('/api/scenario/scenarios', { params })
+  },
+  async getObjectives() {
+    return await apiClient.get('/api/scenario/objectives')
+  },
+  async runOptimization(data) {
+    return await apiClient.post('/api/scenario/optimize', data)
+  }
+}

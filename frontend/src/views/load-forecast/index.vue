@@ -140,6 +140,7 @@
 import { ref, onMounted } from 'vue'
 import { TrendCharts, DataLine, Timer, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { loadForecastApi } from '@/api'
 
 const forecastChartRef = ref(null)
 const errorChartRef = ref(null)
@@ -149,20 +150,45 @@ const forecastType = ref('short')
 const selectedStation = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(20)
+const total = ref(0)
 
-const currentLoad = ref(48.5)
-const maxLoad = ref(62.3)
-const avgLoad = ref(45.2)
-const accuracy = ref(94.5)
+const currentLoad = ref(0)
+const maxLoad = ref(0)
+const avgLoad = ref(0)
+const accuracy = ref(0)
 
-const stations = ref(['换热站1', '换热站2', '换热站3'])
+const stations = ref([])
 
-const forecastDetails = ref([
-  { time: '2026-03-15 08:00', predictedLoad: 52.3, confidenceLower: 50.1, confidenceUpper: 54.5, actualLoad: 51.8, error: 0.97, weather: '晴' },
-  { time: '2026-03-15 09:00', predictedLoad: 55.6, confidenceLower: 53.2, confidenceUpper: 58.0, actualLoad: 54.9, error: 1.28, weather: '晴' },
-  { time: '2026-03-15 10:00', predictedLoad: 58.2, confidenceLower: 55.8, confidenceUpper: 60.6, actualLoad: 57.5, error: 1.22, weather: '晴' }
-])
+const forecastDetails = ref([])
+
+/**
+ * 加载统计数据
+ */
+const loadStats = async () => {
+  try {
+    const result = await loadForecastApi.getForecast()
+    if (result) {
+      currentLoad.value = result.currentLoad || 0
+      maxLoad.value = result.maxLoad || 0
+      avgLoad.value = result.avgLoad || 0
+      accuracy.value = result.accuracy || 0
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+  }
+}
+
+/**
+ * 加载预测详情
+ */
+const loadForecastDetails = async () => {
+  try {
+    const result = await loadForecastApi.getForecastDetails()
+    forecastDetails.value = result.data || []
+  } catch (error) {
+    console.error('加载预测详情失败:', error)
+  }
+}
 
 const initForecastChart = () => {
   const chart = echarts.init(forecastChartRef.value)

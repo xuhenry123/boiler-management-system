@@ -359,15 +359,16 @@ import { ref, computed, onMounted } from 'vue'
 import { DataAnalysis, Warning, WarningFilled, CircleCheck, Refresh, Setting, Bell, Document } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { riskApi } from '@/api'
 
 const riskTrendChartRef = ref(null)
 const riskDistChartRef = ref(null)
 
-const compositeIndex = ref(72)
-const riskLevel = ref('中')
-const pendingCount = ref(8)
-const handledCount = ref(15)
-const handledRate = ref(65)
+const compositeIndex = ref(0)
+const riskLevel = ref('低')
+const pendingCount = ref(0)
+const handledCount = ref(0)
+const handledRate = ref(0)
 const timeRange = ref('week')
 const riskTypeFilter = ref('')
 const riskLevelFilter = ref('')
@@ -595,7 +596,63 @@ const initRiskDistChart = () => {
   chart.setOption(option)
 }
 
+/**
+ * 加载风险指数数据
+ */
+const loadRiskIndex = async () => {
+  try {
+    const result = await riskApi.getRiskIndex()
+    compositeIndex.value = result.compositeIndex || 0
+    riskLevel.value = result.riskLevel === 'MEDIUM' ? '中' : result.riskLevel === 'HIGH' ? '高' : '低'
+    pendingCount.value = result.pendingCount || 0
+    handledCount.value = result.handledCount || 0
+    handledRate.value = result.handledRate || 0
+  } catch (error) {
+    console.error('加载风险指数失败:', error)
+  }
+}
+
+/**
+ * 加载风险维度数据
+ */
+const loadRiskDimension = async () => {
+  try {
+    const result = await riskApi.getRiskDimension()
+    riskDimensionData.value = result.data || []
+  } catch (error) {
+    console.error('加载风险维度失败:', error)
+  }
+}
+
+/**
+ * 加载风险详情数据
+ */
+const loadRiskDetails = async () => {
+  try {
+    const result = await riskApi.getRiskDetails()
+    riskDetails.value = result.data || []
+  } catch (error) {
+    console.error('加载风险详情失败:', error)
+  }
+}
+
+/**
+ * 加载风险告警数据
+ */
+const loadRiskAlerts = async () => {
+  try {
+    const result = await riskApi.getRiskAlerts()
+    alertList.value = result.data || []
+  } catch (error) {
+    console.error('加载风险告警失败:', error)
+  }
+}
+
 onMounted(() => {
+  loadRiskIndex()
+  loadRiskDimension()
+  loadRiskDetails()
+  loadRiskAlerts()
   initRiskTrendChart()
   initRiskDistChart()
 })
