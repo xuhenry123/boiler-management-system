@@ -22,9 +22,9 @@ app.use(express.json());
 
 // 换热站数据
 let stations = [
-  { id: 1, stationCode: 'HS001', stationName: '东城区换热站', address: '北京市东城区', designCapacity: 50, designFlow: 800, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 },
-  { id: 2, stationCode: 'HS002', stationName: '西城区换热站', address: '北京市西城区', designCapacity: 40, designFlow: 650, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 },
-  { id: 3, stationCode: 'HS003', stationName: '朝阳区换热站', address: '北京市朝阳区', designCapacity: 60, designFlow: 1000, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 }
+  { id: 1, stationCode: 'HS001', name: '东城区换热站', stationName: '东城区换热站', address: '北京市东城区', designCapacity: 50, designFlow: 800, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 },
+  { id: 2, stationCode: 'HS002', name: '西城区换热站', stationName: '西城区换热站', address: '北京市西城区', designCapacity: 40, designFlow: 650, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 },
+  { id: 3, stationCode: 'HS003', name: '朝阳区换热站', stationName: '朝阳区换热站', address: '北京市朝阳区', designCapacity: 60, designFlow: 1000, primarySupplyTemp: 120, primaryReturnTemp: 70, secondarySupplyTemp: 50, secondaryReturnTemp: 40, status: 1 }
 ];
 let stationNextId = 4;
 
@@ -59,19 +59,19 @@ let alarmNextId = 6;
 
 // 设备数据
 let equipment = [
-  { id: 1, equipmentCode: 'EQ001', equipmentName: '1号循环泵', equipmentType: 'pump', stationId: 1, model: 'KQL150/315', manufacturer: '上海凯泉', status: 'running', maintenanceStatus: 'normal' },
-  { id: 2, equipmentCode: 'EQ002', equipmentName: '2号循环泵', equipmentType: 'pump', stationId: 1, model: 'KQL150/315', manufacturer: '上海凯泉', status: 'standby', maintenanceStatus: 'normal' },
-  { id: 3, equipmentCode: 'EQ003', equipmentName: '补水泵', equipmentType: 'pump', stationId: 1, model: 'KQL50/150', manufacturer: '上海凯泉', status: 'running', maintenanceStatus: 'normal' },
-  { id: 4, equipmentCode: 'EQ004', equipmentName: '1号换热器', equipmentType: 'heat_exchanger', stationId: 1, model: 'BR0.35-1.6', manufacturer: '阿法拉伐', status: 'running', maintenanceStatus: 'normal' },
-  { id: 5, equipmentCode: 'EQ005', equipmentName: '2号换热器', equipmentType: 'heat_exchanger', stationId: 2, model: 'BR0.35-1.6', manufacturer: '阿法拉伐', status: 'running', maintenanceStatus: 'warning' }
+  { id: 1, code: 'EQ001', name: '1号循环泵', equipmentName: '1号循环泵', type: 'pump', equipmentType: 'pump', stationId: 1, station: '东城区换热站', model: 'KQL150/315', manufacturer: '上海凯泉', status: 1, efficiency: 92, runtime: 8500, maintenanceStatus: 'normal' },
+  { id: 2, code: 'EQ002', name: '2号循环泵', equipmentName: '2号循环泵', type: 'pump', equipmentType: 'pump', stationId: 1, station: '东城区换热站', model: 'KQL150/315', manufacturer: '上海凯泉', status: 0, efficiency: 0, runtime: 0, maintenanceStatus: 'normal' },
+  { id: 3, code: 'EQ003', name: '补水泵', equipmentName: '补水泵', type: 'pump', equipmentType: 'pump', stationId: 1, station: '东城区换热站', model: 'KQL50/150', manufacturer: '上海凯泉', status: 1, efficiency: 88, runtime: 6200, maintenanceStatus: 'normal' },
+  { id: 4, code: 'EQ004', name: '1号换热器', equipmentName: '1号换热器', type: 'heat_exchanger', equipmentType: 'heat_exchanger', stationId: 1, station: '东城区换热站', model: 'BR0.35-1.6', manufacturer: '阿法拉伐', status: 1, efficiency: 95, runtime: 7200, maintenanceStatus: 'normal' },
+  { id: 5, code: 'EQ005', name: '2号换热器', equipmentName: '2号换热器', type: 'heat_exchanger', equipmentType: 'heat_exchanger', stationId: 2, station: '西城区换热站', model: 'BR0.35-1.6', manufacturer: '阿法拉伐', status: 2, efficiency: 90, runtime: 5500, maintenanceStatus: 'warning' }
 ];
 let equipmentNextId = 6;
 
 // 锅炉数据
 let boilers = [
-  { id: 1, boilerCode: 'BLR001', boilerName: '1号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS10-1.0', ratedCapacity: 10, ratedPressure: 1.0, designEfficiency: 0.95, status: 1 },
-  { id: 2, boilerCode: 'BLR002', boilerName: '2号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS10-1.0', ratedCapacity: 10, ratedPressure: 1.0, designEfficiency: 0.95, status: 1 },
-  { id: 3, boilerCode: 'BLR003', boilerName: '3号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS15-1.0', ratedCapacity: 15, ratedPressure: 1.0, designEfficiency: 0.94, status: 0 }
+  { id: 1, code: 'BLR001', name: '1号燃气锅炉', boilerCode: 'BLR001', boilerName: '1号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS10-1.0', ratedCapacity: 10, ratedPressure: 1.0, designEfficiency: 0.95, status: 'running', loadRate: 85, supplyTemp: 120, returnTemp: 70, efficiency: 0.95 },
+  { id: 2, code: 'BLR002', name: '2号燃气锅炉', boilerCode: 'BLR002', boilerName: '2号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS10-1.0', ratedCapacity: 10, ratedPressure: 1.0, designEfficiency: 0.95, status: 'running', loadRate: 72, supplyTemp: 118, returnTemp: 68, efficiency: 0.93 },
+  { id: 3, code: 'BLR003', name: '3号燃气锅炉', boilerCode: 'BLR003', boilerName: '3号燃气锅炉', boilerType: 'gas', manufacturer: '某锅炉厂', model: 'WNS15-1.0', ratedCapacity: 15, ratedPressure: 1.0, designEfficiency: 0.94, status: 'stopped', loadRate: 0, supplyTemp: 0, returnTemp: 0, efficiency: 0 }
 ];
 
 // 气候补偿配置
@@ -89,10 +89,10 @@ let climateCurves = [
 
 // 阀门数据
 let valves = [
-  { id: 1, valveCode: 'V001', valveName: '1号楼入口调节阀', valveType: 'control', nodeId: 1, manufacturer: '西门子', model: 'VVF40', diameter: 50, openRatio: 0.65, status: 1 },
-  { id: 2, valveCode: 'V002', valveName: '2号楼入口调节阀', valveType: 'control', nodeId: 2, manufacturer: '西门子', model: 'VVF40', diameter: 50, openRatio: 0.72, status: 1 },
-  { id: 3, valveCode: 'V003', valveName: '3号楼入口调节阀', valveType: 'control', nodeId: 3, manufacturer: '西门子', model: 'VVF40', diameter: 65, openRatio: 0.58, status: 1 },
-  { id: 4, valveCode: 'V004', valveName: '支路隔离阀1', valveType: 'isolation', nodeId: 4, manufacturer: '丹佛斯', model: 'EV220B', diameter: 40, openRatio: 1.0, status: 1 }
+  { id: 1, valveCode: 'V001', valveName: '1号楼入口调节阀', valveType: 'control', nodeId: 1, manufacturer: '西门子', model: 'VVF40', diameter: 50, currentOpenRatio: 0.65, targetOpenRatio: 0.65, responseTime: 3, protocol: 'Modbus', status: 'running', openRatio: 0.65 },
+  { id: 2, valveCode: 'V002', valveName: '2号楼入口调节阀', valveType: 'control', nodeId: 2, manufacturer: '西门子', model: 'VVF40', diameter: 50, currentOpenRatio: 0.72, targetOpenRatio: 0.72, responseTime: 3, protocol: 'Modbus', status: 'running', openRatio: 0.72 },
+  { id: 3, valveCode: 'V003', valveName: '3号楼入口调节阀', valveType: 'control', nodeId: 3, manufacturer: '西门子', model: 'VVF40', diameter: 65, currentOpenRatio: 0.58, targetOpenRatio: 0.60, responseTime: 4, protocol: 'Modbus', status: 'running', openRatio: 0.58 },
+  { id: 4, valveCode: 'V004', valveName: '支路隔离阀1', valveType: 'isolation', nodeId: 4, manufacturer: '丹佛斯', model: 'EV220B', diameter: 40, currentOpenRatio: 1.0, targetOpenRatio: 1.0, responseTime: 2, protocol: 'Modbus', status: 'running', openRatio: 1.0 }
 ];
 let valveNextId = 5;
 
@@ -676,6 +676,9 @@ app.get('/api/risk/report', (req, res) => {
 app.get('/api/demand-heating/stats', (req, res) => {
   res.json({
     totalUsers: heatUsers.length,
+    normalUsers: Math.floor(heatUsers.length * 0.75),
+    abnormalUsers: Math.floor(heatUsers.length * 0.15),
+    energySaving: random(8, 18).toFixed(1),
     activeUsers: heatUsers.filter(u => u.status === 1).length,
     avgTemp: random(19, 22).toFixed(1),
     demandRate: random(0.8, 1.2).toFixed(2)
@@ -683,13 +686,23 @@ app.get('/api/demand-heating/stats', (req, res) => {
 });
 
 app.get('/api/demand-heating/temperature', (req, res) => {
-  res.json(heatUsers.map(u => ({
-    userId: u.id,
-    userName: u.userName,
-    currentTemp: random(18, 24).toFixed(1),
-    targetTemp: u.targetTemp,
-    collectTime: formatDate(0)
-  })));
+  const buildingMap = {};
+  buildings.forEach(b => { buildingMap[b.id] = b.buildingName; });
+  res.json({
+    data: heatUsers.map(u => ({
+      userId: u.id,
+      userCode: u.userCode,
+      userName: u.userName,
+      buildingId: u.buildingId,
+      buildingName: buildingMap[u.buildingId] || '未知',
+      unitNo: u.unitNo,
+      roomNo: u.roomNo,
+      temperature: random(18, 24).toFixed(1),
+      targetTemp: u.targetTemp,
+      valveStatus: Math.random() > 0.2 ? 'on' : 'off',
+      collectTime: formatDate(0)
+    }))
+  });
 });
 
 app.put('/api/demand-heating/user/:userId/target-temp', (req, res) => {
@@ -919,6 +932,35 @@ app.get('/api/cost/trend', (req, res) => {
     energyCosts: months.map(() => random(80000, 150000)),
     waterCosts: months.map(() => random(10000, 20000)),
     electricityCosts: months.map(() => random(20000, 40000))
+  });
+});
+
+app.get('/api/cost/monthly', (req, res) => {
+  const { year, month } = req.query;
+  res.json({
+    data: energyCosts.map(c => ({
+      stationName: c.enterpriseName,
+      energyType: c.energyType || 'NATURAL_GAS',
+      consumption: c.steamAmount * 100 || random(1000, 5000),
+      unitPrice: random(3, 5),
+      totalCost: c.totalCost || random(10000, 50000),
+      dataTime: `${year || 2026}-${month || 3}-01`
+    })),
+    total: energyCosts.length
+  });
+});
+
+app.get('/api/cost/summary', (req, res) => {
+  res.json({
+    energies: [
+      { energyType: '天然气', totalCost: random(20, 30) },
+      { energyType: '电力', totalCost: random(15, 25) },
+      { energyType: '水', totalCost: random(5, 10) }
+    ],
+    totalCost: random(40, 65),
+    totalConsumption: random(10000, 20000),
+    averageEfficiency: random(85, 95),
+    totalCarbon: random(100, 200)
   });
 });
 
