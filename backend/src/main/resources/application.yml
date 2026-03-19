@@ -4,19 +4,16 @@ server:
 spring:
   application:
     name: boiler-management
-  
+
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/boiler_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: root
-  
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
-      timeout: 3000
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./data/boiler_management.db
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
