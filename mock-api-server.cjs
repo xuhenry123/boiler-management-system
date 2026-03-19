@@ -12,6 +12,67 @@ function randomInt(min, max) {
 
 app.use(express.json());
 
+// 建筑物数据存储
+let buildings = [
+  { id: 1, buildingCode: 'BLD001', buildingName: '阳光花园小区1号楼', address: '东城区阳光路1号', areaHeated: 12000, buildingType: 'residential', heatTransferCoefficient: 1.2, status: 1 },
+  { id: 2, buildingCode: 'BLD002', buildingName: '阳光花园小区2号楼', address: '东城区阳光路2号', areaHeated: 15000, buildingType: 'residential', heatTransferCoefficient: 1.15, status: 1 },
+  { id: 3, buildingCode: 'BLD003', buildingName: '商业大厦A座', address: '西城区金融街8号', areaHeated: 20000, buildingType: 'commercial', heatTransferCoefficient: 0.9, status: 1 }
+];
+let nextId = 4;
+
+// 建筑物列表
+app.get('/api/heat-user/building', (req, res) => {
+  const { page = 1, size = 10 } = req.query;
+  const start = (page - 1) * size;
+  const end = start + parseInt(size);
+  const pagedBuildings = buildings.slice(start, end);
+  res.json({
+    data: pagedBuildings,
+    total: buildings.length,
+    pages: Math.ceil(buildings.length / size),
+    current: parseInt(page)
+  });
+});
+
+// 获取单个建筑物
+app.get('/api/heat-user/building/:id', (req, res) => {
+  const building = buildings.find(b => b.id === parseInt(req.params.id));
+  if (building) {
+    res.json(building);
+  } else {
+    res.status(404).json({ error: '建筑物不存在' });
+  }
+});
+
+// 创建建筑物
+app.post('/api/heat-user/building', (req, res) => {
+  const building = { ...req.body, id: nextId++ };
+  buildings.push(building);
+  res.json({ success: true, id: building.id });
+});
+
+// 更新建筑物
+app.put('/api/heat-user/building/:id', (req, res) => {
+  const index = buildings.findIndex(b => b.id === parseInt(req.params.id));
+  if (index !== -1) {
+    buildings[index] = { ...buildings[index], ...req.body };
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: '建筑物不存在' });
+  }
+});
+
+// 删除建筑物
+app.delete('/api/heat-user/building/:id', (req, res) => {
+  const index = buildings.findIndex(b => b.id === parseInt(req.params.id));
+  if (index !== -1) {
+    buildings.splice(index, 1);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: '建筑物不存在' });
+  }
+});
+
 app.get('/api/dashboard/stats', (req, res) => {
   res.json({
     stationCount: randomInt(10, 30),
