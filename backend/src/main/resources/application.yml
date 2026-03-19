@@ -6,10 +6,8 @@ spring:
     name: boiler-management
   
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/boiler_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./boiler_management.db
   
   data:
     redis:
